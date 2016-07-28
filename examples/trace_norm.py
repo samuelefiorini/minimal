@@ -41,7 +41,7 @@ def single_run(Xtr, Xts, Ytr, Yts, tau, W, plot=False):
         plt.ylabel('objective function')
         plt.show()
 
-    return tr_err, ts_err, objs, iters
+    return tr_err, ts_err, W_err, objs, iters
 
 
 def main():
@@ -59,17 +59,19 @@ def main():
     print(W)
 
     # The learning parameter(s)
-    max_tau = np.linalg.norm(np.dot(Xtr.T, Ytr), ord=2)  # the largest singular value
+    max_tau = np.linalg.norm(np.dot(Xtr.T, Ytr), ord=2) / Xtr.shape[0] # the largest singular value
     tau_range = np.logspace(-4, 0, 20)
 
     tr_err_list = list()
     ts_err_list = list()
+    W_err_list = list()
     objs_list = list()
     iters_list = list()
     for t in tau_range:
         tau = max_tau * t
         print("tau = {}".format(tau))
-        tr_err, ts_err, objs, iters = single_run(Xtr, Xts, Ytr, Yts, tau, W)
+        tr_err, ts_err, W_err, objs, iters = single_run(Xtr, Xts,
+                                                        Ytr, Yts, tau, W)
 
         tr_err_list.append(tr_err)
         ts_err_list.append(ts_err)
@@ -77,6 +79,7 @@ def main():
         # algorithm has reached convergence
         objs_list.append(objs[-1])
         iters_list.append(iters)
+        W_err_list.append(W_err)
 
     print("***********************************************")
 
@@ -85,21 +88,28 @@ def main():
 
     # Plot section
     plt.figure()
-    plt.subplot(311)
+    plt.subplot(221)
     plt.semilogx(tau_range * max_tau, tr_err_list, '-o', label='train error')
     plt.semilogx(tau_range * max_tau, ts_err_list, '-o', label='test error')
     plt.semilogx(opt_tau, np.min(ts_err_list), 'h', label=r'opt $\tau$')
     plt.ylabel(r"$||Y - Y_{pred}||_F$")
-    plt.title("Errors")
+    plt.title("Tr/Ts Errors")
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
            ncol=2, mode="expand", borderaxespad=0.)
 
+    plt.subplot(222)
+    plt.title("Reconstruction errors")
+    plt.semilogx(tau_range * max_tau, W_err_list, '-o')
+    plt.semilogx(opt_tau, W_err_list[np.argmin(ts_err_list)],
+                 'h', label=r'opt $\tau$')
+    plt.ylabel(r"$||W - \hat{W}||_F$")
 
-    plt.subplot(312)
+    plt.subplot(223)
     plt.semilogx(tau_range * max_tau, objs_list, '-o')
     plt.ylabel("Objective function at convergence")
+    plt.xlabel(r"$log_{10}(\tau)$")
 
-    plt.subplot(313)
+    plt.subplot(224)
     plt.semilogx(tau_range * max_tau, iters_list, '-o')
     plt.ylabel("Iters")
     plt.xlabel(r"$log_{10}(\tau)$")
