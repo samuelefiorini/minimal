@@ -9,6 +9,7 @@
 ######################################################################
 
 import numpy as np
+import matplotlib.pyplot as plt
 from minimal.algorithms import trace_norm_minimization
 from SDG4ML.core.wrappers import generate_data
 from sklearn.cross_validation import train_test_split
@@ -16,13 +17,21 @@ from sklearn.cross_validation import train_test_split
 
 def main():
     """Solve a synthetic vector-valued regression problem."""
-    kwargs = {'n': 100, 'd': 300, 'k': 15, 'T': 5,
-              'amplitude': 3.5, 'normalized': False, 'seed': 42}
+
+    # The data generation parameter(s)
+    kwargs = {'n': 12, 'd': 7, 'k': 3, 'T': 5,
+              'amplitude': 3.5, 'normalized': False, 'seed': None}
 
     X, Y, W = generate_data(strategy='multitask', **kwargs)
     Xtr, Xts, Ytr, Yts = train_test_split(X, Y, test_size=0.33,
                                           random_state=kwargs['seed'])
-    W_hat = trace_norm_minimization(Xtr, Ytr)
+
+    print("W size: {} x {}".format(*W.shape))
+
+    # The learning parameter(s)
+    tau = 1
+
+    W_hat, objs = trace_norm_minimization(Xtr, Ytr, tau)
     Y_pred = np.dot(Xts, W_hat)
     Y_pred_tr = np.dot(Xtr, W_hat)
     ts_err = np.linalg.norm((Yts - Y_pred), ord='fro')
@@ -32,6 +41,18 @@ def main():
     print("Test error: {}".format(ts_err))
     print("Train error: {}".format(tr_err))
     print("Recontruction error: {}".format(W_err))
+
+    print("-----------------------------------------")
+    print("Real W:")
+    print(W)
+    print("-----------------------------------------")
+    print("Estimated W:")
+    print(W_hat)
+
+    plt.plot(np.arange(len(objs)), objs, '-o')
+    plt.xlabel('iterations')
+    plt.ylabel('objective function')
+    plt.show()
 
 
 if __name__ == '__main__':

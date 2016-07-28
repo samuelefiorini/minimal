@@ -15,6 +15,25 @@ elaboration of the data.
 import sys
 import numpy as np
 
+def square_loss(X, Y, W):
+    """Compute the value of the square loss on W.
+
+    Parameters
+    ----------
+    X : (n, d) float ndarray
+        data matrix
+    Y : (n, T) float ndarray
+        labels matrix
+    W : (d, T) float ndarray
+        weights
+
+    Returns
+    ----------
+    obj : float
+        The value of the objective function on W.
+    """
+    return 1.0 / X.shape[0] * np.linalg.norm(np.dot(X, W) - Y, ord='fro') ** 2
+
 
 def square_loss_grad(X, Y, W):
     """Compute the square loss gradient at W.
@@ -33,7 +52,7 @@ def square_loss_grad(X, Y, W):
     G : (d, T) float ndarray
         square loss gradient evaluated on the current iterate W.
     """
-    return 2 * np.dot(X.T, (np.dot(X, W) - Y))
+    return 2.0 / X.shape[0] * np.dot(X.T, (np.dot(X, W) - Y))
 
 
 def get_lipschitz(data, loss):
@@ -94,13 +113,18 @@ def trace_norm_prox(W, alpha):
     Wt : (n1, n2) float ndarray
         trace norm prox result
     """
-    U, S, V = np.linalg.svd(W)
-    soft_thresh_S = np.diag(soft_thresholding(np.diag(S), alpha))
-    return np.dot(U, np.dot(soft_thresh_S, V.T))
+    d, T = W.shape
+    U, s, V = np.linalg.svd(W, full_matrices=True)
+    # U ~ (d, d)
+    # s ~ (min(d, T), min(d, T))
+    # V ~ (T, T)
+    s = soft_thresholding(s, alpha)
+    st_S = np.vstack((np.diag(s), np.zeros((np.abs(d-T), T))))
+    return np.dot(U, np.dot(st_S, V))
 
 
 def trace_norm_minimization(data, labels, tau,
-                            loss='square', max_iter=1000):
+                            loss='square', tol=1e-5, max_iter=10000):
     """Solving trace-norm penalized vector-valued regression problems.
 
     Comput the solution of the learning problem
@@ -124,37 +148,57 @@ def trace_norm_minimization(data, labels, tau,
     tau : float
         regularization parameter
     loss : string
-        the selected loss function in {'square', 'logit'}
+        the selected loss function in {'square', 'logit'}. Default is 'square'
+    tol : float
+        stopping rule tolerance. Default is 1e-5.
     max_iter : int
-        maximum number of iterations
+        maximum number of iterations. Default is 1e4.
 
     Returns
     -------
     W : (d, T) ndarray
         vector-valued regression weights
     """
-    if loss == 'square':
+    if loss.lower() == 'square':
         grad = square_loss_grad
+        fun = square_loss
     else:
-        print('Only square loss implemented.')
+        print('Only square loss implemented so far.')
         sys.exit(-1)
+
+    # Get problem size
+    n, d = data.shape
+    _, T = labels.shape
 
     # Estimate the fixed step size
     gamma = 1.0 / get_lipschitz(data, loss)
+    print("Step size: {}".format(gamma))
 
     # Define starting point
-    Wk = np.zeros(d, T)
+    Wk = np.zeros((d, T))
+    objk = np.finfo(np.float64).max  # the largest possible value
+
+    obj_list = list()
 
     # Start iterative method
     for k in range(max_iter):
+        print("-------------------")
+        print("iter: {}".format(k))
 
         # Compute proximal gradient step
         W_next = trace_norm_prox(Wk - gamma * grad(data, labels, Wk),
                                  alpha=tau*gamma)
 
-        if ### stopping criterion
+        # Compute the value of the objective function
+        obj_next = fun(data, labels, W_next) + np.linalg.norm(W_next, ord='nuc')
 
-        Wk = np.array(W_next)
+    
+        # Check stopping criterion
+        if np.abs((objk - obj_next) / objk) <= tol:
+            break
+        else:
+            objk = obj_next
+            obj_list.append(objk)
+            Wk = np.array(W_next)
 
-
-    return Wk
+    return Wk, obj_list
