@@ -123,6 +123,31 @@ def trace_norm_prox(W, alpha):
     return np.dot(U, np.dot(st_S, V))
 
 
+def trace_norm_bound(X, Y, loss='square'):
+    """Compute maximum value for the trace norm parameter.
+
+    Parameters
+    ----------
+    data : (n, d) float ndarray
+        data matrix
+    labels : (n, T) float ndarray
+        labels matrix
+    loss : string
+        the selected loss function in {'square', 'logit'}. Default is 'square'
+
+    Returns
+    ----------
+    max_tau : float
+        maximum value for the trace norm regularization parameter
+    """
+    if loss.lower() == 'square':
+        # In this case max_tau := 2/n * max_sing_val(X^T Y)
+        return np.linalg.norm(np.dot(X.T, Y), ord=2) * (2.0/X.shape[0])
+    else:
+        print('Only square loss implemented so far.')
+        sys.exit(-1)
+
+
 def trace_norm_minimization(data, labels, tau,
                             loss='square', tol=1e-5, max_iter=50000,
                             return_iter=False):

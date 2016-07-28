@@ -11,7 +11,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn
-from minimal.algorithms import trace_norm_minimization
+from minimal.algorithms import trace_norm_minimization, trace_norm_bound
 from SDG4ML.core.wrappers import generate_data
 from sklearn.cross_validation import train_test_split
 
@@ -59,9 +59,10 @@ def main():
     print(W)
 
     # The learning parameter(s)
-    max_tau = np.linalg.norm(np.dot(Xtr.T, Ytr), ord=2) * (2.0/Xtr.shape[0])  # the largest singular value
+    max_tau = trace_norm_bound(Xtr, Ytr, loss='square')
     tau_range = np.logspace(-4, 0, 20)
 
+    # Output containers
     tr_err_list = list()
     ts_err_list = list()
     W_err_list = list()
