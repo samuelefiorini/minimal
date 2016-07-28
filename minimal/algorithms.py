@@ -136,9 +136,9 @@ def trace_norm_minimization(data, labels, tau,
     where the samples are stored row-wise in X, W is the matrix to be learned
     and each column of Y correspond to a single task. The objective function is
     minimized by means of proximal gradient method (aka forward-backward
-    splitting) [REF NEEDED].
+    splitting) [!!REF NEEDED!!].
 
-    [REF HERE]
+    [!!REF HERE!!]
 
     Parameters
     ----------

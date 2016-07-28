@@ -59,7 +59,7 @@ def main():
     print(W)
 
     # The learning parameter(s)
-    max_tau = np.linalg.norm(np.dot(Xtr.T, Ytr), ord=2) / Xtr.shape[0] # the largest singular value
+    max_tau = np.linalg.norm(np.dot(Xtr.T, Ytr), ord=2) * (2.0/Xtr.shape[0])  # the largest singular value
     tau_range = np.logspace(-4, 0, 20)
 
     tr_err_list = list()
@@ -91,7 +91,8 @@ def main():
     plt.subplot(221)
     plt.semilogx(tau_range * max_tau, tr_err_list, '-o', label='train error')
     plt.semilogx(tau_range * max_tau, ts_err_list, '-o', label='test error')
-    plt.semilogx(opt_tau, np.min(ts_err_list), 'h', label=r'opt $\tau$')
+    plt.semilogx(opt_tau, np.min(ts_err_list),
+                 'h', label=r'opt $\tau$', c='#a40000')
     plt.ylabel(r"$||Y - Y_{pred}||_F$")
     plt.title("Tr/Ts Errors")
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
@@ -101,7 +102,7 @@ def main():
     plt.title("Reconstruction errors")
     plt.semilogx(tau_range * max_tau, W_err_list, '-o')
     plt.semilogx(opt_tau, W_err_list[np.argmin(ts_err_list)],
-                 'h', label=r'opt $\tau$')
+                 'h', label=r'opt $\tau$', c='#a40000')
     plt.ylabel(r"$||W - \hat{W}||_F$")
 
     plt.subplot(223)
@@ -114,8 +115,6 @@ def main():
     plt.ylabel("Iters")
     plt.xlabel(r"$log_{10}(\tau)$")
     plt.show()
-
-
 
 
 if __name__ == '__main__':
