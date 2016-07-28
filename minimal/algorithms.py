@@ -124,7 +124,8 @@ def trace_norm_prox(W, alpha):
 
 
 def trace_norm_minimization(data, labels, tau,
-                            loss='square', tol=1e-5, max_iter=10000):
+                            loss='square', tol=1e-5, max_iter=50000,
+                            return_iter=False):
     """Solving trace-norm penalized vector-valued regression problems.
 
     Comput the solution of the learning problem
@@ -153,11 +154,15 @@ def trace_norm_minimization(data, labels, tau,
         stopping rule tolerance. Default is 1e-5.
     max_iter : int
         maximum number of iterations. Default is 1e4.
+    return_iter : bool
+        return the number of iterations before convergence
 
     Returns
     -------
     W : (d, T) ndarray
         vector-valued regression weights
+    k : int
+        the number of iterations (if return_iter True)
     """
     if loss.lower() == 'square':
         grad = square_loss_grad
@@ -182,8 +187,8 @@ def trace_norm_minimization(data, labels, tau,
 
     # Start iterative method
     for k in range(max_iter):
-        print("-------------------")
-        print("iter: {}".format(k))
+        # print("-------------------")
+        # print("iter: {}".format(k))
 
         # Compute proximal gradient step
         W_next = trace_norm_prox(Wk - gamma * grad(data, labels, Wk),
@@ -192,7 +197,7 @@ def trace_norm_minimization(data, labels, tau,
         # Compute the value of the objective function
         obj_next = fun(data, labels, W_next) + np.linalg.norm(W_next, ord='nuc')
 
-    
+
         # Check stopping criterion
         if np.abs((objk - obj_next) / objk) <= tol:
             break
@@ -201,4 +206,7 @@ def trace_norm_minimization(data, labels, tau,
             obj_list.append(objk)
             Wk = np.array(W_next)
 
-    return Wk, obj_list
+    if return_iter:
+        return Wk, obj_list, k
+    else:
+        return Wk, obj_list
