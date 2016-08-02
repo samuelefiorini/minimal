@@ -11,7 +11,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn
-from minimal.algorithms import trace_norm_minimization, trace_norm_bound
+from minimal.algorithms import trace_norm_minimization
+from minimal.algorithms import trace_norm_bound
+from minimal.algorithms import objective_function
 from SDG4ML.core.wrappers import generate_data
 from sklearn.cross_validation import train_test_split
 
@@ -26,14 +28,12 @@ def single_run(Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     tr_err = np.linalg.norm((Ytr - Y_pred_tr), ord='fro')
     W_err = np.linalg.norm((W - W_hat), ord='fro')
 
+    print("-----------------------------------------")
+    print("tau : {}".format(tau))
     print("Test error: {}".format(ts_err))
     print("Train error: {}".format(tr_err))
     print("Recontruction error: {}".format(W_err))
     print("Iters : {}".format(iters))
-
-    print("-----------------------------------------")
-    print("Estimated W:")
-    print(W_hat)
 
     if plot:
         plt.plot(np.arange(len(objs)), objs, '-o')
@@ -54,12 +54,13 @@ def main():
     X, Y, W = generate_data(strategy='multitask', **kwargs)
     Xtr, Xts, Ytr, Yts = train_test_split(X, Y, test_size=0.33,
                                           random_state=kwargs['seed'])
-    print("-----------------------------------------")
-    print("W size: {} x {}\n W = \n".format(*W.shape))
-    print(W)
+    # Problem parameters
+    loss = 'square'
+    # Objective function value for W
+    objW = objective_function(Xtr, Ytr, W, loss=loss)
 
     # The learning parameter(s)
-    max_tau = trace_norm_bound(Xtr, Ytr, loss='square')
+    max_tau = trace_norm_bound(Xtr, Ytr, loss=loss)
     tau_range = np.logspace(-4, 0, 20)
 
     # Output containers
@@ -107,8 +108,8 @@ def main():
     plt.ylabel(r"$||W - \hat{W}||_F$")
 
     plt.subplot(223)
-    plt.semilogx(tau_range * max_tau, objs_list, '-o')
-    plt.ylabel("Objective function at convergence")
+    plt.semilogx(tau_range * max_tau, np.array(objs_list) / objW, '-o')
+    plt.ylabel("Normalized obj fun at convergence")
     plt.xlabel(r"$log_{10}(\tau)$")
 
     plt.subplot(224)

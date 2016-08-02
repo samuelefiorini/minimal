@@ -148,6 +148,33 @@ def trace_norm_bound(X, Y, loss='square'):
         sys.exit(-1)
 
 
+def objective_function(data, labels, W, loss='square'):
+    """Evaluate the objective function at a given point.
+
+    This function evaluates the objective function loss(Y, XW) + tau ||W||_*.
+
+    Parameters
+    ----------
+    data : (n, d) float ndarray
+        data matrix
+    labels : (n, T) float ndarray
+        labels matrix
+    loss : string
+        the selected loss function in {'square', 'logit'}. Default is 'square'
+
+    Returns
+    ----------
+    obj : float
+        the value of the objective function at a given point
+    """
+    if loss.lower() == 'square':
+        fun = square_loss
+        return fun(data, labels, W) + np.linalg.norm(W, ord='nuc')
+    else:
+        print('Only square loss implemented so far.')
+        sys.exit(-1)
+
+
 def trace_norm_minimization(data, labels, tau,
                             loss='square', tol=1e-5, max_iter=50000,
                             return_iter=False):
@@ -212,16 +239,12 @@ def trace_norm_minimization(data, labels, tau,
 
     # Start iterative method
     for k in range(max_iter):
-        # print("-------------------")
-        # print("iter: {}".format(k))
-
         # Compute proximal gradient step
         W_next = trace_norm_prox(Wk - gamma * grad(data, labels, Wk),
                                  alpha=tau*gamma)
 
         # Compute the value of the objective function
-        obj_next = fun(data, labels, W_next) + np.linalg.norm(W_next, ord='nuc')
-
+        obj_next = objective_function(data, labels, W_next, loss)
 
         # Check stopping criterion
         if np.abs((objk - obj_next) / objk) <= tol:
