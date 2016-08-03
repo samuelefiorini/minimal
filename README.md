@@ -9,4 +9,4 @@ The project is still a work-in-progress. The implemented algorithms are heavily 
 
 where Y is [n x T], X is [n x d] and W is [d x T]. The solutions are obtained with proximal gradient methods (aka forward-backward splitting).
 
-**MINIMAL** is free software. It is licensed under the Free BSD licence.
+**MINIMAL** is a free software and it is licensed under Free BSD.

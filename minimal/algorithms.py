@@ -15,6 +15,7 @@ elaboration of the data.
 import sys
 import numpy as np
 
+
 def square_loss(X, Y, W):
     """Compute the value of the square loss on W.
 
@@ -218,7 +219,6 @@ def trace_norm_minimization(data, labels, tau,
     """
     if loss.lower() == 'square':
         grad = square_loss_grad
-        fun = square_loss
     else:
         print('Only square loss implemented so far.')
         sys.exit(-1)
