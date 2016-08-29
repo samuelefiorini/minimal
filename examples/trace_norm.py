@@ -9,9 +9,9 @@
 ######################################################################
 
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn
+import seaborn as sns
 from minimal.algorithms import trace_norm_minimization
+from minimal.algorithms import accelerated_trace_norm_minimization
 from minimal.algorithms import trace_norm_bound
 from minimal.algorithms import objective_function
 from SDG4ML.core.wrappers import generate_data
@@ -20,8 +20,10 @@ from sklearn.cross_validation import train_test_split
 
 def single_run(Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     """Single run of the minimzation algorithm."""
-    W_hat, objs, iters = trace_norm_minimization(Xtr, Ytr,
-                                                 tau, return_iter=True)
+    W_hat, objs, iters = accelerated_trace_norm_minimization(Xtr, Ytr, tau,
+                                                             return_iter=True)
+    # W_hat, objs, iters = trace_norm_minimization(Xtr, Ytr, tau,
+    #                                              return_iter=True)
     Y_pred = np.dot(Xts, W_hat)
     Y_pred_tr = np.dot(Xtr, W_hat)
     ts_err = np.linalg.norm((Yts - Y_pred), ord='fro')
@@ -36,17 +38,16 @@ def single_run(Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     print("Iters : {}".format(iters))
 
     if plot:
-        plt.plot(np.arange(len(objs)), objs, '-o')
-        plt.xlabel('iterations')
-        plt.ylabel('objective function')
-        plt.show()
+        sns.plt.plot(np.arange(len(objs)), objs, '-o')
+        sns.plt.xlabel('iterations')
+        sns.plt.ylabel('objective function')
+        sns.plt.show()
 
     return tr_err, ts_err, W_err, objs, iters
 
 
 def main():
     """Solve a synthetic vector-valued regression problem."""
-
     # The data generation parameter(s)
     kwargs = {'n': 12, 'd': 7, 'k': 3, 'T': 5,
               'amplitude': 3.5, 'normalized': False, 'seed': None}
@@ -85,38 +86,41 @@ def main():
 
     print("***********************************************")
 
-    opt_tau = tau_range[np.argmin(ts_err_list)]  * max_tau
+    opt_tau = tau_range[np.argmin(ts_err_list)] * max_tau
     print("Best tau: {}".format(opt_tau))
 
     # Plot section
-    plt.figure()
-    plt.subplot(221)
-    plt.semilogx(tau_range * max_tau, tr_err_list, '-o', label='train error')
-    plt.semilogx(tau_range * max_tau, ts_err_list, '-o', label='test error')
-    plt.semilogx(opt_tau, np.min(ts_err_list),
-                 'h', label=r'opt $\tau$', c='#a40000')
-    plt.ylabel(r"$||Y - Y_{pred}||_F$")
-    plt.title("Tr/Ts Errors")
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-           ncol=2, mode="expand", borderaxespad=0.)
+    sns.set_context("notebook")
+    sns.plt.figure()
+    sns.plt.subplot(221)
+    sns.plt.semilogx(tau_range * max_tau, tr_err_list, '-o',
+                     label='train error')
+    sns.plt.semilogx(tau_range * max_tau, ts_err_list, '-o',
+                     label='test error')
+    sns.plt.semilogx(opt_tau, np.min(ts_err_list),
+                     'h', label=r'opt $\tau$', c='#a40000')
+    sns.plt.ylabel(r"$||Y - Y_{pred}||_F$")
+    sns.plt.title("Tr/Ts Errors")
+    sns.plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+                   ncol=2, mode="expand", borderaxespad=0.)
 
-    plt.subplot(222)
-    plt.title("Reconstruction errors")
-    plt.semilogx(tau_range * max_tau, W_err_list, '-o')
-    plt.semilogx(opt_tau, W_err_list[np.argmin(ts_err_list)],
-                 'h', label=r'opt $\tau$', c='#a40000')
-    plt.ylabel(r"$||W - \hat{W}||_F$")
+    sns.plt.subplot(222)
+    sns.plt.title("Reconstruction errors")
+    sns.plt.semilogx(tau_range * max_tau, W_err_list, '-o')
+    sns.plt.semilogx(opt_tau, W_err_list[np.argmin(ts_err_list)],
+                     'h', label=r'opt $\tau$', c='#a40000')
+    sns.plt.ylabel(r"$||W - \hat{W}||_F$")
 
-    plt.subplot(223)
-    plt.semilogx(tau_range * max_tau, np.array(objs_list) / objW, '-o')
-    plt.ylabel("Normalized obj fun at convergence")
-    plt.xlabel(r"$log_{10}(\tau)$")
+    sns.plt.subplot(223)
+    sns.plt.semilogx(tau_range * max_tau, np.array(objs_list) / objW, '-o')
+    sns.plt.ylabel("Normalized obj fun at convergency")
+    sns.plt.xlabel(r"$log_{10}(\tau)$")
 
-    plt.subplot(224)
-    plt.semilogx(tau_range * max_tau, iters_list, '-o')
-    plt.ylabel("Iters")
-    plt.xlabel(r"$log_{10}(\tau)$")
-    plt.show()
+    sns.plt.subplot(224)
+    sns.plt.semilogx(tau_range * max_tau, iters_list, '-o')
+    sns.plt.ylabel("Iters")
+    sns.plt.xlabel(r"$log_{10}(\tau)$")
+    sns.plt.show()
 
 
 if __name__ == '__main__':
