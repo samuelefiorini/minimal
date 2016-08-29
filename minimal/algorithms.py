@@ -329,10 +329,8 @@ def accelerated_trace_norm_minimization(data, labels, tau,
 
     # Estimate the fixed step size
     gamma = 1.0 / get_lipschitz(data, loss)
-    print("Step size: {}".format(gamma))
 
     # Define starting point
-    Wk = np.zeros((d, T))  # real point
     W_old = np.zeros((d, T))  # handy dummy variable
     Zk = np.zeros((d, T))  # search point
     tk = 1.0
@@ -342,22 +340,13 @@ def accelerated_trace_norm_minimization(data, labels, tau,
 
     # Start iterative method
     for k in range(max_iter):
-        print("----------------------- [{}]".format(k))
-
-        print("Wk:\n{}".format(np.linalg.norm(Wk, ord=2)))
-        print("\tZk:\n\t{}".format(np.linalg.norm(Zk, ord=2)))
 
         # Compute proximal gradient step
-        W_next = trace_norm_prox(Zk - gamma * grad(data, labels, Zk),
-                                 alpha=tau*gamma)
-        print("W_next:\n{}".format(np.linalg.norm(W_next, ord=2)))
-        print("W_old:\n{}".format(np.linalg.norm(W_old, ord=2)))
+        Wk = trace_norm_prox(Zk - gamma * grad(data, labels, Zk),
+                             alpha=tau*gamma)
 
-        # Compute the value of the objective functionprint W_next
-        obj_next = objective_function(data, labels, W_next, loss)
-
-        # print("objk:\n{}".format(objk))
-        # print("obj_next:\n{}".format(obj_next))
+        # Compute the value of the objective function
+        obj_next = objective_function(data, labels, Wk, loss)
 
         # Check stopping criterion
         if np.abs((objk - obj_next) / objk) <= tol:
@@ -369,19 +358,11 @@ def accelerated_trace_norm_minimization(data, labels, tau,
 
             # FISTA Update
             t_next = (1 + np.sqrt(1 + 4 * tk * tk)) * 0.5
-            Z_next = W_next + ((tk - 1) / t_next) * (W_next - W_old)
-            print("\tZ_next:\n\t{}".format(np.linalg.norm(Z_next, ord=2)))
+            Zk = Wk + ((tk - 1) / t_next) * (Wk - W_old)
 
             # Point and search point update
             W_old = np.array(Wk)
-            Wk = np.array(W_next)
-            Zk = np.array(Z_next)
             tk = t_next.copy()
-
-        if k > 100:
-            import matplotlib.pyplot as plt
-            plt.plot(range(k+1), obj_list, '-o'); plt.show()
-            sys.exit(-1)  # debug
 
     if return_iter:
         return Wk, obj_list, k
