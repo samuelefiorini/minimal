@@ -120,7 +120,10 @@ def trace_norm_prox(W, alpha):
     # s ~ (min(d, T), min(d, T))
     # V ~ (T, T)
     s = soft_thresholding(s, alpha)
-    st_S = np.vstack((np.diag(s), np.zeros((np.abs(d-T), T))))
+    if d >= T:
+        st_S = np.vstack((np.diag(s), np.zeros((np.abs(d-T), T))))
+    else:
+        st_S = np.hstack((np.diag(s), np.zeros((d, np.abs(d-T)))))
     return np.dot(U, np.dot(st_S, V))
 
 
@@ -179,7 +182,7 @@ def objective_function(data, labels, W, loss='square'):
 def trace_norm_minimization(data, labels, tau,
                             loss='square', tol=1e-5, max_iter=50000,
                             return_iter=False):
-    """Solving trace-norm penalized vector-valued regression problems.
+    """Solution of trace-norm penalized vector-valued regression problems.
 
     Comput the solution of the learning problem
 
@@ -253,6 +256,131 @@ def trace_norm_minimization(data, labels, tau,
             objk = obj_next
             obj_list.append(objk)
             Wk = np.array(W_next)
+
+    if return_iter:
+        return Wk, obj_list, k
+    else:
+        return Wk, obj_list
+
+
+def accelerated_trace_norm_minimization(data, labels, tau,
+                                        loss='square', tol=1e-5,
+                                        max_iter=50000,
+                                        return_iter=False):
+    """Fast solution of trace-norm penalized vector-valued regression problems.
+
+    Compute the solution of the learning problem
+
+                min loss(Y, XW) + tau ||W||_*
+                 W
+
+    where the samples are stored row-wise in X, W is the matrix to be learned
+    and each column of Y correspond to a single task. The objective function is
+    minimized by means of accelerated proximal gradient method (aka
+    forward-backward splitting). This implementation extends to the matrix case
+    the FISTA algorithm presented in [1]. Another relevant reference for this
+    work is [2], but they use a FISTA-like acceleration along with an adaptive
+    step-size defined via backtracking (aka line search). Such trick is not
+    implemented here.
+
+    References
+    ----------
+    [1] Beck, Amir, and Marc Teboulle. "A fast iterative shrinkage-thresholding
+    algorithm for linear inverse problems." SIAM journal on imaging sciences
+    2.1 (2009): 183-202.
+    [2] Ji, Shuiwang, and Jieping Ye. "An accelerated gradient method for trace
+    norm minimization." Proceedings of the 26th annual international conference
+    on machine learning. ACM, 2009.
+
+    Parameters
+    ----------
+    data : (n, d) float ndarray
+        data matrix
+    labels : (n, T) float ndarray
+        labels matrix
+    tau : float
+        regularization parameter
+    loss : string
+        the selected loss function in {'square', 'logit'}. Default is 'square'
+    tol : float
+        stopping rule tolerance. Default is 1e-5.
+    max_iter : int
+        maximum number of iterations. Default is 1e4.
+    return_iter : bool
+        return the number of iterations before convergence
+
+    Returns
+    -------
+    W : (d, T) ndarray
+        vector-valued regression weights
+    k : int
+        the number of iterations (if return_iter True)
+    """
+    if loss.lower() == 'square':
+        grad = square_loss_grad
+    else:
+        print('Only square loss implemented so far.')
+        sys.exit(-1)
+
+    # Get problem size
+    n, d = data.shape
+    _, T = labels.shape
+
+    # Estimate the fixed step size
+    gamma = 1.0 / get_lipschitz(data, loss)
+    print("Step size: {}".format(gamma))
+
+    # Define starting point
+    Wk = np.zeros((d, T))  # real point
+    W_old = np.zeros((d, T))  # handy dummy variable
+    Zk = np.zeros((d, T))  # search point
+    tk = 1.0
+    objk = np.finfo(np.float64).max  # the largest possible value
+
+    obj_list = list()
+
+    # Start iterative method
+    for k in range(max_iter):
+        print("----------------------- [{}]".format(k))
+
+        print("Wk:\n{}".format(np.linalg.norm(Wk, ord=2)))
+        print("\tZk:\n\t{}".format(np.linalg.norm(Zk, ord=2)))
+
+        # Compute proximal gradient step
+        W_next = trace_norm_prox(Zk - gamma * grad(data, labels, Zk),
+                                 alpha=tau*gamma)
+        print("W_next:\n{}".format(np.linalg.norm(W_next, ord=2)))
+        print("W_old:\n{}".format(np.linalg.norm(W_old, ord=2)))
+
+        # Compute the value of the objective functionprint W_next
+        obj_next = objective_function(data, labels, W_next, loss)
+
+        # print("objk:\n{}".format(objk))
+        # print("obj_next:\n{}".format(obj_next))
+
+        # Check stopping criterion
+        if np.abs((objk - obj_next) / objk) <= tol:
+            break
+        else:
+            # Save the value of the current objective function
+            objk = obj_next
+            obj_list.append(objk)
+
+            # FISTA Update
+            t_next = (1 + np.sqrt(1 + 4 * tk * tk)) * 0.5
+            Z_next = W_next + ((tk - 1) / t_next) * (W_next - W_old)
+            print("\tZ_next:\n\t{}".format(np.linalg.norm(Z_next, ord=2)))
+
+            # Point and search point update
+            W_old = np.array(Wk)
+            Wk = np.array(W_next)
+            Zk = np.array(Z_next)
+            tk = t_next.copy()
+
+        if k > 100:
+            import matplotlib.pyplot as plt
+            plt.plot(range(k+1), obj_list, '-o'); plt.show()
+            sys.exit(-1)  # debug
 
     if return_iter:
         return Wk, obj_list, k
