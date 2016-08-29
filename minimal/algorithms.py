@@ -120,6 +120,7 @@ def trace_norm_prox(W, alpha):
     # s ~ (min(d, T), min(d, T))
     # V ~ (T, T)
     s = soft_thresholding(s, alpha)
+    # make the output n1 x n2
     if d >= T:
         st_S = np.vstack((np.diag(s), np.zeros((np.abs(d-T), T))))
     else:
