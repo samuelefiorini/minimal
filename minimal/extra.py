@@ -12,24 +12,20 @@ import sys
 
 
 def test(function):
-    """Decorator that tests the decored function."""
+    """Testing decorator."""
     def tested_function(*args, **kwargs):
-
         s = 0
         while True:
             try:
                 print("\nTesting strategies with seed: {}\n".format(s))
                 function(*args, seed=s, **kwargs)
                 s += 1
+            except (KeyboardInterrupt, SystemExit):
+                print("Exit signal received.")
+                break
             except:
                 e = sys.exc_info()[0]
                 print("ERROR: {}".format(e))
                 print("Seed: {}".format(s))
-
-        # t0 = time.time()
-        # result = function(*args, **kwargs)
-        # print("\nAdenine {} - Elapsed time : {} s\n"
-        #       .format(function.__name__, sec_to_time(time.time() - t0)))
-        # return result
-
+                break
     return tested_function
