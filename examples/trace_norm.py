@@ -48,7 +48,7 @@ def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     return tr_err, ts_err, W_err, objs, iters
 
 
-@test
+# @test
 def main(seed=None, **kwargs):
     """Solve a synthetic vector-valued regression problem."""
     # The data generation parameter(s)
@@ -98,7 +98,7 @@ def main(seed=None, **kwargs):
         print("***********************************************\n")
 
         opt_tau = tau_range[np.argmin(ts_err_list)] * max_tau
-        print("Best tau: {}".format(opt_tau))
+        print("Best tau: {}\n".format(opt_tau))
 
         # Plot section
         sns.set_context("notebook")
@@ -136,4 +136,4 @@ def main(seed=None, **kwargs):
         sns.plt.savefig(name+'.png')
 
 if __name__ == '__main__':
-    main()
+    main(seed=8)
