@@ -14,7 +14,7 @@ from minimal.algorithms import trace_norm_minimization
 from minimal.algorithms import accelerated_trace_norm_minimization
 from minimal.algorithms import trace_norm_bound
 from minimal.algorithms import objective_function
-from minimal.extra import test
+# from minimal.extra import test
 from SDG4ML.core.wrappers import generate_data
 from sklearn.cross_validation import train_test_split
 
@@ -23,8 +23,6 @@ def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     """Single run of the minimzation algorithm."""
     W_hat, objs, iters = minimization(Xtr, Ytr, tau,
                                       return_iter=True)
-    # W_hat, objs, iters = trace_norm_minimization(Xtr, Ytr, tau,
-    #                                              return_iter=True)
 
     Y_pred = np.dot(Xts, W_hat)
     Y_pred_tr = np.dot(Xtr, W_hat)

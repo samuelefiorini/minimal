@@ -340,7 +340,6 @@ def accelerated_trace_norm_minimization(data, labels, tau,
 
     # Start iterative method
     for k in range(max_iter):
-
         # Compute proximal gradient step
         Wk = trace_norm_prox(Zk - gamma * grad(data, labels, Zk),
                              alpha=tau*gamma)
@@ -362,7 +361,7 @@ def accelerated_trace_norm_minimization(data, labels, tau,
 
             # Point and search point update
             W_old = np.array(Wk)
-            tk = t_next.copy()
+            tk = t_next
 
     if return_iter:
         return Wk, obj_list, k
