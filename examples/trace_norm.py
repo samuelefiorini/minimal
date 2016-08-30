@@ -14,6 +14,7 @@ from minimal.algorithms import trace_norm_minimization
 from minimal.algorithms import accelerated_trace_norm_minimization
 from minimal.algorithms import trace_norm_bound
 from minimal.algorithms import objective_function
+from minimal.extra import test
 from SDG4ML.core.wrappers import generate_data
 from sklearn.cross_validation import train_test_split
 
@@ -47,11 +48,12 @@ def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     return tr_err, ts_err, W_err, objs, iters
 
 
-def main():
+@test
+def main(seed=None, **kwargs):
     """Solve a synthetic vector-valued regression problem."""
     # The data generation parameter(s)
-    kwargs = {'n': 12, 'd': 7, 'k': 3, 'T': 5,
-              'amplitude': 3.5, 'normalized': False, 'seed': None}
+    kwargs = {'n': 12, 'd': 7, 'T': 5,
+              'normalized': False, 'seed': seed}
 
     X, Y, W = generate_data(strategy='multitask', **kwargs)
     Xtr, Xts, Ytr, Yts = train_test_split(X, Y, test_size=0.33,
@@ -66,9 +68,11 @@ def main():
     tau_range = np.logspace(-4, 0, 20)
 
     # The minimizer of choiche
-    minimizers = [trace_norm_minimization, accelerated_trace_norm_minimization]
-    for minimizer in minimizers:
-        print("Using: {}".format(minimizer))
+    minimizers = [trace_norm_minimization,
+                  accelerated_trace_norm_minimization]
+    names = ['ISTA', 'FISTA']
+    for minimizer, name in zip(minimizers, names):
+        print("*** {} ***".format(name))
 
         # Output containers
         tr_err_list = list()
@@ -83,7 +87,6 @@ def main():
                                                             Xtr, Xts,
                                                             Ytr, Yts,
                                                             tau, W)
-
             tr_err_list.append(tr_err)
             ts_err_list.append(ts_err)
             # the last value is the one for which the
@@ -92,7 +95,7 @@ def main():
             iters_list.append(iters)
             W_err_list.append(W_err)
 
-        print("***********************************************")
+        print("***********************************************\n")
 
         opt_tau = tau_range[np.argmin(ts_err_list)] * max_tau
         print("Best tau: {}".format(opt_tau))
@@ -120,7 +123,8 @@ def main():
         sns.plt.ylabel(r"$||W - \hat{W}||_F$")
 
         sns.plt.subplot(223)
-        sns.plt.semilogx(tau_range * max_tau, np.array(objs_list) / objW, '-o')
+        sns.plt.semilogx(tau_range * max_tau,
+                         np.array(objs_list) / objW, '-o')
         sns.plt.ylabel("Normalized obj fun at convergency")
         sns.plt.xlabel(r"$log_{10}(\tau)$")
 
@@ -128,8 +132,8 @@ def main():
         sns.plt.semilogx(tau_range * max_tau, iters_list, '-o')
         sns.plt.ylabel("Iters")
         sns.plt.xlabel(r"$log_{10}(\tau)$")
-        sns.plt.show()
-
+        sns.plt.suptitle(name)
+        sns.plt.savefig(name+'.png')
 
 if __name__ == '__main__':
     main()
