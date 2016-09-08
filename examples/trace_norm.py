@@ -14,7 +14,7 @@ from minimal.algorithms import trace_norm_minimization
 from minimal.algorithms import accelerated_trace_norm_minimization
 from minimal.algorithms import trace_norm_bound
 from minimal.algorithms import objective_function
-# from minimal.extra import test
+from minimal.extra import test
 from SDG4ML.core.wrappers import generate_data
 from sklearn.cross_validation import train_test_split
 
@@ -46,11 +46,13 @@ def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     return tr_err, ts_err, W_err, objs, iters
 
 
-# @test
+@test
 def main(seed=None, **kwargs):
     """Solve a synthetic vector-valued regression problem."""
     # The data generation parameter(s)
-    kwargs = {'n': 12, 'd': 7, 'T': 5,
+    # kwargs = {'n': 12, 'd': 7, 'T': 5,
+    #           'normalized': False, 'seed': seed}
+    kwargs = {'n': 1000, 'd': 150, 'T': 20,
               'normalized': False, 'seed': seed}
 
     X, Y, W = generate_data(strategy='multitask', **kwargs)
@@ -134,4 +136,5 @@ def main(seed=None, **kwargs):
         sns.plt.savefig(name+'.png')
 
 if __name__ == '__main__':
-    main(seed=8)
+    # main(seed=8)
+    main()
