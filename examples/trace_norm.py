@@ -52,7 +52,7 @@ def main(seed=None, **kwargs):
     # The data generation parameter(s)
     # kwargs = {'n': 12, 'd': 7, 'T': 5,
     #           'normalized': False, 'seed': seed}
-    kwargs = {'n': 100, 'd': 50, 'T': 20,
+    kwargs = {'n': 100, 'd': 50, 'T': 20, 'sigma': 5,
               'normalized': False, 'seed': seed}
 
     X, Y, W = generate_data(strategy='multitask', **kwargs)
@@ -69,8 +69,8 @@ def main(seed=None, **kwargs):
 
     # The minimizer of choiche
     minimizers = [trace_norm_minimization,
-                  accelerated_trace_norm_minimization]
-    names = ['ISTA', 'FISTA']
+                  accelerated_trace_norm_minimization][::-1]
+    names = ['ISTA', 'FISTA'][::-1]
     for minimizer, name in zip(minimizers, names):
         print("*** {} ***".format(name))
 
@@ -83,15 +83,15 @@ def main(seed=None, **kwargs):
         for t in tau_range:
             tau = max_tau * t
             # print("tau = {}".format(tau))
-            tr_err, ts_err, W_err, objs, iters = single_run(minimizer,
-                                                            Xtr, Xts,
-                                                            Ytr, Yts,
-                                                            tau, W)
+            tr_err, ts_err, W_err, obj, iters = single_run(minimizer,
+                                                           Xtr, Xts,
+                                                           Ytr, Yts,
+                                                           tau, W)
             tr_err_list.append(tr_err)
             ts_err_list.append(ts_err)
             # the last value is the one for which the
             # algorithm has reached convergence
-            objs_list.append(objs[-1])
+            objs_list.append(obj)
             iters_list.append(iters)
             W_err_list.append(W_err)
 

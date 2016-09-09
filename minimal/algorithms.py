@@ -12,8 +12,10 @@ elaboration of the data.
 # FreeBSD License
 ######################################################################
 
+from __future__ import division
 import sys
 import numpy as np
+from collections import deque
 from . import tools
 
 
@@ -55,6 +57,8 @@ def trace_norm_minimization(data, labels, tau,
     -------
     W : (d, T) ndarray
         vector-valued regression weights
+    obj : float
+        the value of the objective function at convergence
     k : int
         the number of iterations (if return_iter True)
     """
@@ -96,9 +100,9 @@ def trace_norm_minimization(data, labels, tau,
             Wk = np.array(W_next)
 
     if return_iter:
-        return Wk, obj_list, k
+        return Wk, obj_list[-1], k
     else:
-        return Wk, obj_list
+        return Wk, obj_list[-1]
 
 
 def accelerated_trace_norm_minimization(data, labels, tau,
@@ -151,6 +155,8 @@ def accelerated_trace_norm_minimization(data, labels, tau,
     -------
     W : (d, T) ndarray
         vector-valued regression weights
+    obj : float
+        the value of the objective function at convergence
     k : int
         the number of iterations (if return_iter True)
     """
@@ -173,7 +179,11 @@ def accelerated_trace_norm_minimization(data, labels, tau,
     tk = 1.0
     objk = np.finfo(np.float64).max  # the largest possible value
 
-    obj_list = list()
+    # obj_list = list()
+
+    # FIFO list of objective function values. Added to improve FISTA stability
+    max_objq_length = 5
+    obj_deque = deque([objk], max_objq_length)
 
     # Start iterative method
     for k in range(max_iter):
@@ -185,12 +195,15 @@ def accelerated_trace_norm_minimization(data, labels, tau,
         obj_next = tools.objective_function(data, labels, Wk, loss)
 
         # Check stopping criterion
-        if np.abs((objk - obj_next) / objk) <= tol:
+        # if np.abs((objk - obj_next) / objk) <= tol:
+        obj_mean = sum(obj_deque) / len(obj_deque)
+        if np.abs((obj_mean - obj_next) / obj_mean) <= tol:
             break
         else:
             # Save the value of the current objective function
             objk = obj_next
-            obj_list.append(objk)
+            # obj_list.append(objk)
+            obj_deque.append(obj_next)
 
             # FISTA Update
             t_next = (1 + np.sqrt(1 + 4 * tk * tk)) * 0.5
@@ -201,6 +214,6 @@ def accelerated_trace_norm_minimization(data, labels, tau,
             tk = t_next
 
     if return_iter:
-        return Wk, obj_list, k
+        return Wk, obj_deque[-1], k
     else:
-        return Wk, obj_list
+        return Wk, obj_deque[-1]
