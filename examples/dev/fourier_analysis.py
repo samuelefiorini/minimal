@@ -10,25 +10,38 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from SDG4ML.core.wrappers import generate_data
-from minimal import algorithms as algo
+from minimal import algorithms as al
+from skimage import data
+from skimage import color
+from scipy import signal as sgnl
+
+def show(A):
+    plt.gray()
+    plt.imshow(A)
+    plt.show()
 
 def main():
-    kwargs = {'n': 1000, 'd': 150, 'T': 20,
-              'normalized': False, 'seed': seed}
-    X, Y, W = generate_data(strategy='multitask', **kwargs)
-    max_tau = trace_norm_bound(X, Y, loss='square')
+    # Load image
+    X = color.rgb2gray(data.astronaut())
 
-    FX = np.fft.fft2(X)
-    FX = np.fft.fftshift(FX)
+    # Prox norm
+    TX = al.trace_norm_prox(X, alpha=10)
 
-    rFX = np.fft.fft2(algo.trace_norm_prox(X), max_tau)
-    rFX = np.fft.fftshift(rFX)
+    # Fourier transform
+    FX = np.fft.rfft2(X, s=X.shape)
+    FTX = np.fft.rfft2(TX, s=TX.shape)
 
-    plt.figure()
+    # Frequency response
+    H = np.fft.fftshift(FTX / FX)
 
-    plt.subplot(131)
-    plt.imshow(FX), plt.title('FX'), plt.colorbar()
+    # Impulsive response
+    h = np.fft.irfft2(H)
+
+    #### TEST ####
+    TX_hat = sgnl.fftconvolve(X, h)
+
+    show(TX_hat)
+
 
 
 

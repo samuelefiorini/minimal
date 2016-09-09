@@ -19,14 +19,14 @@ from SDG4ML.core.wrappers import generate_data
 from sklearn.cross_validation import train_test_split
 
 
-def main():
+# @test
+def main(seed=None):
     """Solve a synthetic vector-valued regression problem with warm restart."""
-
     # The data generation parameter(s)
-    _kwargs = {'n': 12, 'd': 7, 'T': 5, 'sigma': 5,
-               'normalized': False, 'seed': 10}
-    # kwargs = {'n': 100, 'd': 50, 'T': 20, 'sigma': 5,
-    #           'normalized': False, 'seed': seed}
+    # _kwargs = {'n': 12, 'd': 7, 'T': 5, 'sigma': 5,
+    #            'normalized': False, 'seed': seed}
+    _kwargs = {'n': 100, 'd': 50, 'T': 20, 'sigma': 5,
+               'normalized': False, 'seed': seed}
 
     X, Y, W = generate_data(strategy='multitask', **_kwargs)
     Xtr, Xts, Ytr, Yts = train_test_split(X, Y, test_size=0.33,
@@ -107,4 +107,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(seed=10)

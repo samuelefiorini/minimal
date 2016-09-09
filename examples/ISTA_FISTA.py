@@ -22,7 +22,7 @@ from sklearn.cross_validation import train_test_split
 def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     """Single run of the minimzation algorithm."""
     W_hat, objs, iters = minimization(Xtr, Ytr, tau,
-                                      return_iter=True, tol=1e-7)
+                                      return_iter=True)
 
     Y_pred = np.dot(Xts, W_hat)
     Y_pred_tr = np.dot(Xtr, W_hat)
