@@ -12,8 +12,8 @@ import numpy as np
 import seaborn as sns
 from minimal.algorithms import trace_norm_minimization
 from minimal.algorithms import accelerated_trace_norm_minimization
-from minimal.algorithms import trace_norm_bound
-from minimal.algorithms import objective_function
+from minimal.tools import trace_norm_bound
+from minimal.tools import objective_function
 from minimal.extra import test
 from SDG4ML.core.wrappers import generate_data
 from sklearn.cross_validation import train_test_split
@@ -22,7 +22,7 @@ from sklearn.cross_validation import train_test_split
 def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     """Single run of the minimzation algorithm."""
     W_hat, objs, iters = minimization(Xtr, Ytr, tau,
-                                      return_iter=True)
+                                      return_iter=True, tol=1e-7)
 
     Y_pred = np.dot(Xts, W_hat)
     Y_pred_tr = np.dot(Xtr, W_hat)
@@ -46,13 +46,13 @@ def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     return tr_err, ts_err, W_err, objs, iters
 
 
-@test
+# @test
 def main(seed=None, **kwargs):
     """Solve a synthetic vector-valued regression problem."""
     # The data generation parameter(s)
     # kwargs = {'n': 12, 'd': 7, 'T': 5,
     #           'normalized': False, 'seed': seed}
-    kwargs = {'n': 1000, 'd': 150, 'T': 20,
+    kwargs = {'n': 100, 'd': 50, 'T': 20,
               'normalized': False, 'seed': seed}
 
     X, Y, W = generate_data(strategy='multitask', **kwargs)
