@@ -49,6 +49,7 @@ def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
 # @test
 def main(seed=None, **kwargs):
     """Solve a synthetic vector-valued regression problem."""
+    print("-- NO warm restart --")
     # The data generation parameter(s)
     # kwargs = {'n': 12, 'd': 7, 'T': 5, 'sigma': 5,
     #           'normalized': False, 'seed': seed}
@@ -97,17 +98,17 @@ def main(seed=None, **kwargs):
 
         # print("***********************************************\n")
 
-        opt_tau = tau_range[np.argmin(ts_err_list)] * max_tau
+        opt_tau = tau_range[np.argmin(ts_err_list)]
         # print("Best tau: {}\n".format(opt_tau))
-        print("Best tau: {} (scaling factor)\n".format(opt_tau / max_tau))
+        print("Best tau: {} (scaling factor)\n".format(opt_tau))
 
         # Plot section
         sns.set_context("notebook")
         sns.plt.figure()
         sns.plt.subplot(221)
-        sns.plt.semilogx(tau_range * max_tau, tr_err_list, '-o',
+        sns.plt.semilogx(tau_range, tr_err_list, '-o',
                          label='train error')
-        sns.plt.semilogx(tau_range * max_tau, ts_err_list, '-o',
+        sns.plt.semilogx(tau_range, ts_err_list, '-o',
                          label='test error')
         sns.plt.semilogx(opt_tau, np.min(ts_err_list),
                          'h', label=r'opt $\tau$', c='#a40000')
@@ -118,25 +119,24 @@ def main(seed=None, **kwargs):
 
         sns.plt.subplot(222)
         sns.plt.title("Reconstruction errors")
-        sns.plt.semilogx(tau_range * max_tau, W_err_list, '-o')
+        sns.plt.semilogx(tau_range, W_err_list, '-o')
         sns.plt.semilogx(opt_tau, W_err_list[np.argmin(ts_err_list)],
                          'h', label=r'opt $\tau$', c='#a40000')
         sns.plt.ylabel(r"$||W - \hat{W}||_F$")
 
         sns.plt.subplot(223)
-        sns.plt.semilogx(tau_range * max_tau,
+        sns.plt.semilogx(tau_range,
                          np.array(objs_list) / objW, '-o')
         sns.plt.ylabel("Normalized obj fun at convergency")
         sns.plt.xlabel(r"$log_{10}(\tau)$")
 
         sns.plt.subplot(224)
-        sns.plt.semilogx(tau_range * max_tau, iters_list, '-o')
+        sns.plt.semilogx(tau_range, iters_list, '-o')
         sns.plt.ylabel("Iters")
         sns.plt.xlabel(r"$log_{10}(\tau)$")
         sns.plt.suptitle(name)
         sns.plt.savefig(name+'.png')
 
 if __name__ == '__main__':
-    # main(seed=8)
-    main(seed=10)
-    # main()
+    main(seed=8)
+    # main(seed=10)

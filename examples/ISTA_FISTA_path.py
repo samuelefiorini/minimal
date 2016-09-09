@@ -22,6 +22,7 @@ from sklearn.cross_validation import train_test_split
 # @test
 def main(seed=None):
     """Solve a synthetic vector-valued regression problem with warm restart."""
+    print("-- Warm restart --")
     # The data generation parameter(s)
     # _kwargs = {'n': 12, 'd': 7, 'T': 5, 'sigma': 5,
     #            'normalized': False, 'seed': seed}
@@ -107,4 +108,4 @@ def main(seed=None):
 
 
 if __name__ == '__main__':
-    main(seed=10)
+    main(seed=8)
