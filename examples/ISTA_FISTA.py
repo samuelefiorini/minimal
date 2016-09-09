@@ -30,12 +30,12 @@ def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
     tr_err = np.linalg.norm((Ytr - Y_pred_tr), ord='fro')
     W_err = np.linalg.norm((W - W_hat), ord='fro')
 
-    print("-----------------------------------------")
-    print("tau : {}".format(tau))
-    print("Test error: {}".format(ts_err))
-    print("Train error: {}".format(tr_err))
-    print("Recontruction error: {}".format(W_err))
-    print("Iters : {}".format(iters))
+    # print("-----------------------------------------")
+    # print("tau : {}".format(tau))
+    # print("Test error: {}".format(ts_err))
+    # print("Train error: {}".format(tr_err))
+    # print("Recontruction error: {}".format(W_err))
+    # print("Iters : {}".format(iters))
 
     if plot:
         sns.plt.plot(np.arange(len(objs)), objs, '-o')
@@ -50,7 +50,7 @@ def single_run(minimization, Xtr, Xts, Ytr, Yts, tau, W, plot=False):
 def main(seed=None, **kwargs):
     """Solve a synthetic vector-valued regression problem."""
     # The data generation parameter(s)
-    # kwargs = {'n': 12, 'd': 7, 'T': 5,
+    # kwargs = {'n': 12, 'd': 7, 'T': 5, 'sigma': 5,
     #           'normalized': False, 'seed': seed}
     kwargs = {'n': 100, 'd': 50, 'T': 20, 'sigma': 5,
               'normalized': False, 'seed': seed}
@@ -69,8 +69,8 @@ def main(seed=None, **kwargs):
 
     # The minimizer of choiche
     minimizers = [trace_norm_minimization,
-                  accelerated_trace_norm_minimization][::-1]
-    names = ['ISTA', 'FISTA'][::-1]
+                  accelerated_trace_norm_minimization]
+    names = ['ISTA', 'FISTA']
     for minimizer, name in zip(minimizers, names):
         print("*** {} ***".format(name))
 
@@ -95,10 +95,11 @@ def main(seed=None, **kwargs):
             iters_list.append(iters)
             W_err_list.append(W_err)
 
-        print("***********************************************\n")
+        # print("***********************************************\n")
 
         opt_tau = tau_range[np.argmin(ts_err_list)] * max_tau
-        print("Best tau: {}\n".format(opt_tau))
+        # print("Best tau: {}\n".format(opt_tau))
+        print("Best tau: {} (scaling factor)\n".format(opt_tau / max_tau))
 
         # Plot section
         sns.set_context("notebook")
@@ -137,4 +138,5 @@ def main(seed=None, **kwargs):
 
 if __name__ == '__main__':
     # main(seed=8)
-    main()
+    main(seed=10)
+    # main()
