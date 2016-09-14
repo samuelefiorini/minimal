@@ -10,6 +10,7 @@
 
 import sys
 import time
+from datetime import datetime
 
 
 def test(function):
@@ -48,6 +49,11 @@ def sec_to_time(seconds):
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
     return "%02d:%02d:%02d" % (h, m, s)
+
+
+def get_time():
+    """Handy time flat creator."""
+    return datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
 
 
 def timed(function):

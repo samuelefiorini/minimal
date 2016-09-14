@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Minimal main routine script.
+"""Minimal training script.
 
 This script performs trace-norm penalized vector-valued regression (VVR) on a
 given input dataset.
@@ -16,6 +16,8 @@ import imp
 import shutil
 import argparse
 import os
+import cPickle as pkl
+import seaborn as sns
 import minimal as mini
 
 
@@ -39,10 +41,33 @@ def main(config_file):
     print("* Number of tau:\t   {}".format(len(tau_range)))
     print("* Cross-validation splits: {}".format(cv_split))
 
-    best_model, errors = mini.core.model_selection(data=data, labels=labels,
-                                                   algorithm=minimization,
-                                                   cv_split=cv_split)
+    out = mini.core.model_selection(data=data, labels=labels,
+                                    tau_range=tau_range,
+                                    algorithm=minimization,
+                                    cv_split=cv_split)
+    # Dump results
+    root = config.output_root_folder
+    folder = os.path.join(root, '_'.join(('mini', config.exp_tag,
+                                          mini.extra.get_time())))
+    filename = os.path.join(folder, 'results.pkl')
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    with open(filename, 'w') as f:
+        pkl.dump(out, f)
+    print("* Results dumped in {}".format(filename))
 
+    # Save simple cross-validation error plots
+    filename = os.path.join(folder, 'cv-errors.pdf')
+    sns.plt.semilogx(out['tau_range'], out['tr_err'], label='tr error')
+    sns.plt.semilogx(out['tau_range'], out['vld_err'], label='vld error')
+    sns.plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+                   ncol=2, mode="expand", borderaxespad=0.)
+    sns.plt.title("{}-Fold cross-validation error".format(cv_split))
+    sns.plt.xlabel(r"$log_{10}(\tau)$")
+    sns.plt.ylabel(r"$||Y_{vld} - Y_{pred}||_F$")
+    sns.plt.savefig(filename)
+    print("* Plot generated in {}".format(filename))
+    print("-------------------------------------")
 
 
 ######################################################################

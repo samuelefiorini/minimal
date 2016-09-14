@@ -15,6 +15,7 @@ from minimal.algorithms import accelerated_trace_norm_minimization
 from minimal.algorithms import trace_norm_path
 from minimal.tools import objective_function
 from minimal.extra import test
+from minimal import tools
 from SDG4ML.core.wrappers import generate_data
 from sklearn.cross_validation import train_test_split
 
@@ -26,7 +27,9 @@ def main(seed=None):
     # The data generation parameter(s)
     # _kwargs = {'n': 12, 'd': 7, 'T': 5, 'sigma': 5,
     #            'normalized': False, 'seed': seed}
-    _kwargs = {'n': 100, 'd': 50, 'T': 20, 'sigma': 5,
+    # _kwargs = {'n': 100, 'd': 50, 'T': 20, 'sigma': 5,
+    #            'normalized': False, 'seed': seed}
+    _kwargs = {'n': 1300, 'd': 150, 'T': 30, 'sigma': 5,
                'normalized': False, 'seed': seed}
 
     X, Y, W = generate_data(strategy='multitask', **_kwargs)
@@ -37,8 +40,11 @@ def main(seed=None):
     # Objective function value for W
     objW = objective_function(Xtr, Ytr, W, loss=loss)
 
+    # Get the maximum tau value
+    max_tau = tools.trace_norm_bound(Xtr, Ytr)
+
     # The learning parameter(s)
-    tau_range = np.logspace(-4, 0, 20)  # scaling factor
+    tau_range = np.logspace(-4, 0, 20) * max_tau  # scaling factor
 
     # The minimizer of choiche
     minimizers = [trace_norm_minimization,

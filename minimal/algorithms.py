@@ -35,7 +35,7 @@ def trace_norm_path(minimization_algorithm, data, labels, tau_range,
     labels : (n, T) float ndarray
         training labels matrix
     tau_range : (n_tau, ) float ndarray
-        range of regularization parameters (max_tau scaling factors)
+        range of regularization parameters
     **kwargs : dictionary of keyword-only arguments
         the input list of arguments fed to the minization algorithm of choice
 
@@ -48,9 +48,6 @@ def trace_norm_path(minimization_algorithm, data, labels, tau_range,
     iter_list : (n_tau, ) list of float
         the number of iterations corresponding to each tau
     """
-    # Get the maximum tau value
-    max_tau = tools.trace_norm_bound(data, labels, loss=loss)
-
     # Define output containers
     W_list = list()
     obj_list = list()
@@ -60,8 +57,7 @@ def trace_norm_path(minimization_algorithm, data, labels, tau_range,
     Wstart = None
 
     # Evaluate the tau grid
-    for t in tau_range:
-        tau = max_tau * t
+    for tau in tau_range:
         W, obj, k = minimization_algorithm(data, labels, tau, Wstart,
                                            loss, return_iter=True, **kwargs)
         W_list.append(W)
