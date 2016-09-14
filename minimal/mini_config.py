@@ -17,11 +17,14 @@ plotting_context = 'notebook'  # one of {paper, notebook, talk, poster}
 file_format = 'pdf'  # or 'png'
 
 # ----------------------------  INPUT DATA ---------------------------- #
-data_file = 'data.csv'
-labels_file = 'labels.csv'  # OPTIONAL
-samples_on = 'rows'  # if samples lie on columns use 'cols' or 'col'
-data_sep = ','  # the data separator. e.g., ',', '\t', ' ', ...
-X, y, feat_names, index = data_source.load('custom',
-                                           data_file, labels_file,
-                                           samples_on=samples_on,
-                                           sep=data_sep)
+# data_file = 'data.csv'
+# labels_file = 'labels.csv'  # OPTIONAL
+# samples_on = 'rows'  # if samples lie on columns use 'cols' or 'col'
+# data_sep = ','  # the data separator. e.g., ',', '\t', ' ', ...
+# X, y, feat_names, index = data_source.load('custom',
+#                                            data_file, labels_file,
+#                                            samples_on=samples_on,
+#                                            sep=data_sep)
+X, Y, feat_names, index, W = data_source.load(opt='synthetic',
+                                              n_samples=1300,
+                                              d=150, T=30, sigma=5)

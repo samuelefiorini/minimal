@@ -26,7 +26,7 @@ def main(config_file):
     config_path = os.path.abspath(config_file)
     config = imp.load_source('mini_config', config_path)
 
-    print config
+    print config.X
 
 
 ######################################################################

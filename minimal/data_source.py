@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Forked from ADENINE.
+"""Forked from ADENINE and SDG4ML.
 
-This module is just a wrapper for some sklearn.datasets functions.
+Lite version of adenine.utils.data_source() function that inherits the
+synthetic VVR problem generation from SDG4ML.core.strategies.multitask().
 """
 
 ######################################################################
@@ -17,44 +18,6 @@ import numpy as np
 import pandas as pd
 import logging
 from sklearn import datasets
-from sklearn.preprocessing import Binarizer
-
-# Legacy import
-try:
-    from sklearn.model_selection import StratifiedShuffleSplit
-except ImportError:
-    from sklearn.cross_validation import StratifiedShuffleSplit
-
-
-def generate_gauss(mu=None, std=None, n_sample=None):
-    """Create a Gaussian dataset.
-
-    Generates a dataset with n_sample * n_class examples and n_dim dimensions.
-
-    Parameters
-    -----------
-    mu : array of float, shape : n_class x n_dim
-        The mean of each class.
-
-    std :  array of float, shape : n_class
-        The standard deviation of each Gaussian distribution.
-
-    n_sample : int
-        Number of point per class.
-    """
-    n_class, n_var = mu.shape
-
-    X = np.zeros((n_sample*n_class, n_var))
-    y = np.zeros(n_sample*n_class, dtype=int)
-
-    start = 0
-    for i, s, m in zip(range(n_class), std, mu):
-        end = start + n_sample
-        X[start:end, :] = s * np.random.randn(n_sample, n_var) + m
-        y[start:end] = i
-        start = end
-
-    return X, y
 
 
 def load_custom(x_filename, y_filename, samples_on='rows', **kwargs):
@@ -127,6 +90,70 @@ def load_custom(x_filename, y_filename, samples_on='rows', **kwargs):
                                    target=y, index=dfx.index.tolist())
 
 
+def make_multitask(n=100, d=150, T=1, amplitude=3.5, sigma=1,
+                   normalized=False, seed=None, **kwargs):
+    """Generate a multitask vector-valued regression (X,Y) problem.
+
+    The relationship between input and output is given by:
+
+                                            Y = X*W + noise
+
+    where X ~ N(0, 1), W ~ U(-amplitude, +amplitude), noise ~ N(0,sigma).
+
+    Parameters
+    ----------
+    n : int, optional (default is `100`)
+        number of samples
+    d : int, optional (default is `150`)
+        total number of dimensions
+    T : int, optional (default is `1`)
+        number of tasks
+    amplitude : float,  optional (default is `3.5`)
+        amplitude of the generative linear model
+    sigma : float, optional (default is `1`)
+        Gaussian noise std
+    normalized : bool, optional (default is `False`)
+        if normalized is true than the data matrix is normalized as
+        data/sqrt(n)
+    seed : float, optional (default is `None`)
+        random seed initialization
+
+    Returns
+    -------
+    X : (n, d) ndarray
+        data matrix
+    Y : (n, T) ndarray
+        label vector
+    beta : (d, T) ndarray
+        real beta vector
+    """
+    if seed is not None:
+        state0 = np.random.get_state()
+        np.random.seed(seed)
+
+    if normalized:
+        factor = np.sqrt(n)
+    else:
+        factor = 1
+
+    X = np.random.randn(n, d)/factor
+    W = np.random.uniform(low=-np.abs(amplitude),
+                          high=+np.abs(amplitude),
+                          size=(d, T))
+    Y = np.dot(X, W) + sigma * np.random.randn(n, T)
+
+    if seed is not None:  # restore random seed
+        np.random.set_state(state0)
+
+    # Crate dummy names for variables and samples
+    _feats = ['feat_'+str(i) for i in range(X.shape[1])]
+    _indexes = ['sample_'+str(i) for i in range(X.shape[0])]
+
+    return datasets.base.Bunch(data=X,
+                               feature_names=_feats,
+                               target=Y, index=_indexes, W_star=W)
+
+
 def load(opt='custom', x_filename=None, y_filename=None, n_samples=0,
          samples_on='rows', **kwargs):
     """Load a specified dataset.
@@ -179,64 +206,21 @@ def load(opt='custom', x_filename=None, y_filename=None, n_samples=0,
     """
     data = None
     try:
-        if opt.lower() == 'iris':
-            data = datasets.load_iris()
-        elif opt.lower() == 'digits':
-            data = datasets.load_digits()
-        elif opt.lower() == 'diabetes':
-            data = datasets.load_diabetes()
-            b = Binarizer(threshold=np.mean(data.target))
-            data.target = b.fit_transform(data.data)
-        elif opt.lower() == 'boston':
-            data = datasets.load_boston()
-            b = Binarizer(threshold=np.mean(data.target))
-            data.target = b.fit_transform(data.data)
-        elif opt.lower() == 'gauss':
-            means = np.array([[-1, 1, 1, 1], [0, -1, 0, 0], [1, 1, -1, -1]])
-            sigmas = np.array([0.33, 0.33, 0.33])
-            if n_samples <= 1:
-                n_samples = 333
-            xx, yy = generate_gauss(mu=means, std=sigmas, n_sample=n_samples)
-            data = datasets.base.Bunch(data=xx, target=yy)
-        elif opt.lower() == 'circles':
-            if n_samples == 0:
-                n_samples = 400
-            xx, yy = datasets.make_circles(n_samples=n_samples, factor=.3,
-                                           noise=.05)
-            data = datasets.base.Bunch(data=xx, target=yy)
-        elif opt.lower() == 'moons':
-            if n_samples == 0:
-                n_samples = 400
-            xx, yy = datasets.make_moons(n_samples=n_samples, noise=.01)
-            data = datasets.base.Bunch(data=xx, target=yy)
-        elif opt.lower() == 'custom':
+        if opt.lower() == 'custom':
             data = load_custom(x_filename, y_filename, samples_on, **kwargs)
+        elif opt.lower() in ['synthetic', 'vvr']:
+            data = make_multitask(n=n_samples, **kwargs)
     except IOError as e:
         print("I/O error({0}): {1}".format(e.errno, e.strerror))
 
     X, y = data.data, data.target
-    if n_samples > 0 and X.shape[0] > n_samples:
-        if y is not None:
-            try:  # Legacy for sklearn
-                sss = StratifiedShuffleSplit(y, test_size=n_samples, n_iter=1)
-                # idx = np.random.permutation(X.shape[0])[:n_samples]
-            except TypeError:
-                sss = StratifiedShuffleSplit(n_iter=1, test_size=n_samples) \
-                    .split(X, y)
-            _, idx = list(sss)[0]
-        else:
-            idx = np.arange(X.shape[0])
-            np.random.shuffle(idx)
-            idx = idx[:n_samples]
-
-        X, y = X[idx, :], y[idx]
-    else:
-        # The length of index must be consistent with the number of samples
-        idx = np.arange(X.shape[0])
 
     feat_names = data.feature_names if hasattr(data, 'feature_names') \
         else np.arange(X.shape[1])
-    index = np.array(data.index)[idx] if hasattr(data, 'index') \
+    index = np.array(data.index) if hasattr(data, 'index') \
         else np.arange(X.shape[0])
 
-    return X, y, feat_names, index
+    if hasattr(data, 'W_star'):
+        return X, y, feat_names, index, data.W_star
+    else:
+        return X, y, feat_names, index
