@@ -21,12 +21,28 @@ import minimal as mini
 
 def main(config_file):
     """Import configuration file and run VVR."""
-
     # Load the configuration file
     config_path = os.path.abspath(config_file)
     config = imp.load_source('mini_config', config_path)
 
-    print config.X
+    # Extract the needed information from config
+    data = config.X  # (n, d) data matrix
+    labels = config.Y  # (d, T) labels matrix
+    tau_range = config.tau_range
+    minimization = config.minimization_algorithm
+    cv_split = config.cross_validation_split
+
+    print("-------------- Minimal --------------")
+    print("* Data matrix:\t\t   {} x {}".format(*data.shape))
+    print("* Labels matrix:\t   {} x {}".format(*labels.shape))
+    print("* Minimization algorithm:  {}".format(minimization))
+    print("* Number of tau:\t   {}".format(len(tau_range)))
+    print("* Cross-validation splits: {}".format(cv_split))
+
+    best_model, errors = mini.core.model_selection(data=data, labels=labels,
+                                                   algorithm=minimization,
+                                                   cv_split=cv_split)
+
 
 
 ######################################################################

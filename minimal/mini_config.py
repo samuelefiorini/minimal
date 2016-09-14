@@ -8,15 +8,16 @@
 # FreeBSD License
 ######################################################################
 
+import numpy as np
 from minimal import data_source
 
-# --------------------------  EXPERMIENT INFO ------------------------- #
+# -------------------------- CONTEXT INFO ---------------------------- #
 exp_tag = 'minimal_dev'
 output_root_folder = 'results'
 plotting_context = 'notebook'  # one of {paper, notebook, talk, poster}
 file_format = 'pdf'  # or 'png'
 
-# ----------------------------  INPUT DATA ---------------------------- #
+# ---------------------------- INPUT DATA ---------------------------- #
 # data_file = 'data.csv'
 # labels_file = 'labels.csv'  # OPTIONAL
 # samples_on = 'rows'  # if samples lie on columns use 'cols' or 'col'
@@ -28,3 +29,9 @@ file_format = 'pdf'  # or 'png'
 X, Y, feat_names, index, W = data_source.load(opt='synthetic',
                                               n_samples=1300,
                                               d=150, T=30, sigma=5)
+
+
+# ---------------------------- EXPERIMENT SETTING -------------------- #
+minimization_algorithm = 'FISTA'  # in ['ISTA', 'FISTA']
+cross_validation_split = 4  # number of Kfold CV split for parameter selection
+tau_range = np.logspace(-4, 0, 20)  # scaling factors for TAU_MAX
