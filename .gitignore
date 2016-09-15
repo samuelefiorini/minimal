@@ -2,9 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.csv
 # minimal results
-results/*
+**/results/*
 
 # C extensions
 *.so
