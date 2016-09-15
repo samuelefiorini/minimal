@@ -18,6 +18,7 @@ import os
 import argparse
 import cPickle as pkl
 import numpy as np
+import pandas as pd
 import minimal as mini
 
 
@@ -41,6 +42,14 @@ def main(root):
     with open(res_file, 'r') as f:
         results = pkl.load(f)
 
+    # Save the test data
+    dfX = pd.DataFrame(data=test_data, index=config.test_index,
+                       columns=config.feat_names[0])
+    dfX.to_csv(os.path.join(root, 'training_data'))
+    dfY = pd.DataFrame(data=test_labels, index=config.test_index,
+                       columns=config.feat_names[1])
+    dfY.to_csv(os.path.join(root, 'training_labels'))
+
     # Get the weights
     W_hat = results['W_hat']
 
@@ -55,6 +64,7 @@ def main(root):
                          test_error=pred_error,
                          file_format=config.file_format,
                          context=config.plotting_context)
+    print("* Updated plot {}".format(filename+'.'+config.file_format))
     print("----------------------------------------------")
 
 

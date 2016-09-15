@@ -55,13 +55,13 @@ def main(config_file):
     # Copy the configuration file into the output folder
     shutil.copy(config_path, os.path.join(folder, 'mini_config.py'))
 
-    # Save the input data
+    # Save the training data
     dfX = pd.DataFrame(data=data, index=config.index,
                        columns=config.feat_names[0])
-    dfX.to_csv(os.path.join(folder, 'data'))
+    dfX.to_csv(os.path.join(folder, 'training_data'))
     dfY = pd.DataFrame(data=labels, index=config.index,
                        columns=config.feat_names[1])
-    dfY.to_csv(os.path.join(folder, 'labels'))
+    dfY.to_csv(os.path.join(folder, 'training_labels'))
 
     # Dump results
     filename = os.path.join(folder, 'results.pkl')
@@ -74,7 +74,7 @@ def main(config_file):
     mini.plotting.errors(results=out, cv_split=cv_split, filename=filename,
                          file_format=config.file_format,
                          context=config.plotting_context)
-    print("* Plot generated in {}".format(filename))
+    print("* Plot generated in {}".format(filename+'.'+config.file_format))
     print("----------------------------------------------")
 
 
