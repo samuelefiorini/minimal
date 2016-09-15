@@ -58,8 +58,10 @@ def main(config_file):
 
     # Save simple cross-validation error plots
     filename = os.path.join(folder, 'cv-errors.pdf')
-    sns.plt.semilogx(out['tau_range'], out['tr_err'], label='tr error')
-    sns.plt.semilogx(out['tau_range'], out['vld_err'], label='vld error')
+    sns.plt.semilogx(out['tau_range'], out['tr_err'], '-o', label='tr error')
+    sns.plt.semilogx(out['tau_range'], out['vld_err'], '-o', label='vld error')
+    sns.plt.semilogx(out['opt_tau'], min(out['vld_err']),
+                     'h', label=r'opt $\tau$', c='#a40000')
     sns.plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
                    ncol=2, mode="expand", borderaxespad=0.)
     sns.plt.title("{}-Fold cross-validation error".format(cv_split))

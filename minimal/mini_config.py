@@ -27,8 +27,8 @@ file_format = 'pdf'  # or 'png'
 #                                            samples_on=samples_on,
 #                                            sep=data_sep)
 X, Y, feat_names, index, W = data_source.load(opt='synthetic',
-                                              n_samples=100,
-                                              d=300, T=50, sigma=5)
+                                              n_samples=20,
+                                              d=7, T=5, sigma=5)
 # X, Y, feat_names, index, W = data_source.load(opt='synthetic',
 #                                               n_samples=1300,
 #                                               d=150, T=30, sigma=5)
@@ -36,5 +36,5 @@ X, Y, feat_names, index, W = data_source.load(opt='synthetic',
 
 # ---------------------------- EXPERIMENT SETTING -------------------- #
 minimization_algorithm = 'FISTA'  # in ['ISTA', 'FISTA']
-cross_validation_split = 4  # number of Kfold CV split for parameter selection
+cross_validation_split = 5  # number of Kfold CV split for parameter selection
 tau_range = np.logspace(-3, 0, 20)  # scaling factors for TAU_MAX

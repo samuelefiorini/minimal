@@ -51,10 +51,10 @@ def main(seed=None, **kwargs):
     """Solve a synthetic vector-valued regression problem."""
     print("-- NO warm restart --")
     # The data generation parameter(s)
-    # kwargs = {'n': 12, 'd': 7, 'T': 5, 'sigma': 5,
-    #           'normalized': False, 'seed': seed}
-    kwargs = {'n': 100, 'd': 50, 'T': 20, 'sigma': 5,
+    kwargs = {'n': 12, 'd': 7, 'T': 5, 'sigma': 5,
               'normalized': False, 'seed': seed}
+    # kwargs = {'n': 100, 'd': 50, 'T': 20, 'sigma': 5,
+    #           'normalized': False, 'seed': seed}
 
     X, Y, W = generate_data(strategy='multitask', **kwargs)
     Xtr, Xts, Ytr, Yts = train_test_split(X, Y, test_size=0.33,

@@ -63,7 +63,7 @@ def trace_norm_path(minimization_algorithm, data, labels, tau_range,
         W_list.append(W)
         obj_list.append(obj)
         iter_list.append(k)
-        Wstart = W
+        Wstart = W.copy()
 
     return W_list, obj_list, iter_list
 

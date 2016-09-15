@@ -19,7 +19,7 @@ import numpy as np
 from minimal.algorithms import trace_norm_path
 from minimal.algorithms import trace_norm_minimization
 from minimal.algorithms import accelerated_trace_norm_minimization
-from sklearn.cross_validation import KFold
+from sklearn.cross_validation import KFold, train_test_split
 from minimal import tools
 
 
@@ -27,7 +27,8 @@ def kf_worker(minimizer, X_tr, Y_tr, tau_range, i, results):
     """Worker for parallel KFold implementation."""
     Ws, _, _ = trace_norm_path(minimizer, X_tr, Y_tr,
                                tau_range, loss='square')
-    results[i] = Ws
+    # results[i] = Ws
+    return Ws
 
 
 def model_selection(data, labels, tau_range, algorithm='ISTA', cv_split=5):
@@ -78,50 +79,72 @@ def model_selection(data, labels, tau_range, algorithm='ISTA', cv_split=5):
 
     # Get the maximum tau value
     max_tau = tools.trace_norm_bound(data, labels)
+    scaled_tau_range = tau_range * max_tau
 
     # Kfold starts here
-    kf = KFold(n=n, n_folds=cv_split)
-    tr_errors = np.empty((cv_split, len(tau_range)))
-    vld_errors = np.empty((cv_split, len(tau_range)))
+    # kf = KFold(n=n, n_folds=cv_split)
     jobs = []  # multiprocessing job list
     results = mp.Manager().dict()  # dictionary shared among processess
 
     # Submit each kfold job
-    for i, (tr_idx, vld_idx) in enumerate(kf):
-        X_tr = data[tr_idx, :]
-        X_vld = data[vld_idx, :]
-        Y_tr = labels[tr_idx, :]
-        Y_vld = labels[vld_idx, :]
+    # for i, (tr_idx, vld_idx) in enumerate(kf):
+    #     X_tr = data[tr_idx, :]
+    #     Y_tr = labels[tr_idx, :]
+    #     X_vld = data[vld_idx, :]
+    #     Y_vld = labels[vld_idx, :]
+    tr_errors = np.zeros((cv_split, len(tau_range)))
+    vld_errors = np.zeros((cv_split, len(tau_range)))
+    for i in range(cv_split):
+        X_tr, X_vld, Y_tr, Y_vld = train_test_split(data, labels,
+                                                    test_size=0.33)
+        # print tr_idx
+        # print vld_idx
 
-        p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
-                                               Y_tr, tau_range * max_tau,
-                                               i, results))
-        jobs.append(p)
-        p.start()
-
-    # Collect the results
-    for p in jobs:
-        p.join()
-
-    # Evaluate the errors
-    for i, w in enumerate(results.keys()):
-        Ws = results[w]
+        # kf_worker(minimizer, X_tr, Y_tr, scaled_tau_range)
+        # break
+        Ws, _, _ = trace_norm_path(minimizer, X_tr, Y_tr,
+                                   scaled_tau_range, loss='square')
+        # results[i] = Ws
         for j, W in enumerate(Ws):
             Y_pred_tr = np.dot(X_tr, W)
             Y_pred_vld = np.dot(X_vld, W)
             vld_errors[i, j] = np.linalg.norm((Y_vld - Y_pred_vld), ord='fro')
             tr_errors[i, j] = np.linalg.norm((Y_tr - Y_pred_tr), ord='fro')
 
+
+    #     p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
+    #                                            Y_tr, tau_range * max_tau,
+    #                                            i, results))
+    #     jobs.append(p)
+    #     p.start()
+    #
+    # # Collect the results
+    # for p in jobs:
+    #     p.join()
+
+    # Evaluate the errors
+    # tr_errors = np.zeros((1, len(scaled_tau_range)))
+    # vld_errors = np.zeros((1, len(scaled_tau_range)))
+    # for i in results.keys():
+    #     Ws = results[i]
+    #     for j, W in enumerate(Ws):
+    #         Y_pred_tr = np.dot(X_tr, W)
+    #         Y_pred_vld = np.dot(X_vld, W)
+    #         vld_errors[i, j] = np.linalg.norm((Y_vld - Y_pred_vld), ord='fro')
+    #         tr_errors[i, j] = np.linalg.norm((Y_tr - Y_pred_tr), ord='fro')
+
+    print vld_errors
+
     # Once all the training is done, get the best tau
     avg_vld_err = np.mean(vld_errors, axis=0)
     avg_tr_err = np.mean(tr_errors, axis=0)
-    opt_tau = tau_range[np.argmin(avg_vld_err)] * max_tau
+    opt_tau = scaled_tau_range[np.argmin(avg_vld_err)]
 
     # Refit and return the best model
     W_hat = minimizer(data, labels, opt_tau)
 
     # Output container
-    out = {'tau_range': tau_range * max_tau,
+    out = {'tau_range': scaled_tau_range,
            'opt_tau': opt_tau,
            'tr_err': avg_tr_err,
            'vld_err': avg_vld_err,
