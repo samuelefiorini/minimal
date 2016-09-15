@@ -67,7 +67,6 @@ def load_custom(x_filename, y_filename, samples_on='rows', **kwargs):
                                    index=np.arange(X.shape[0]))
 
     elif x_filename.endswith('.csv') or x_filename.endswith('.txt'):
-        y = None
         kwargs.setdefault('header', 0)  # header on first row
         kwargs.setdefault('index_col', 0)  # indexes on first
         try:
@@ -80,7 +79,6 @@ def load_custom(x_filename, y_filename, samples_on='rows', **kwargs):
                 # specified for data only.
                 kwargs.pop('usecols', None)
                 dfy = pd.read_csv(y_filename, **kwargs)
-                y = dfy.as_matrix().ravel()
 
         except IOError as e:
             e.strerror = "Can't open {} or {}".format(x_filename, y_filename)
@@ -93,7 +91,7 @@ def load_custom(x_filename, y_filename, samples_on='rows', **kwargs):
 
         return datasets.base.Bunch(data=dfx.as_matrix(),
                                    feature_names=_feats,
-                                   target=y, index=dfx.index.tolist())
+                                   target=dfy.as_matrix(), index=dfx.index.tolist())
 
 
 def make_multitask(n=100, d=150, T=1, amplitude=3.5, sigma=1,
