@@ -19,8 +19,13 @@ import numpy as np
 from minimal.algorithms import trace_norm_path
 from minimal.algorithms import trace_norm_minimization
 from minimal.algorithms import accelerated_trace_norm_minimization
-from sklearn.cross_validation import KFold, train_test_split
 from minimal import tools
+
+# Legacy import
+try:
+    from sklearn.model_selection import KFold
+except:
+    from sklearn.cross_validation import KFold
 
 
 def kf_worker(minimizer, X_tr, Y_tr, tau_range, tr_idx, vld_idx, i, results):
@@ -30,7 +35,7 @@ def kf_worker(minimizer, X_tr, Y_tr, tau_range, tr_idx, vld_idx, i, results):
     results[i] = {'W': Ws, 'tr_idx': tr_idx, 'vld_idx': vld_idx}
 
 
-def model_selection(data, labels, tau_range, algorithm='ISTA', cv_split=5):
+def model_selection(data, labels, tau_range, algorithm='FISTA', cv_split=5):
     """Select the best tau in the range and return the best model.
 
     Parameters
