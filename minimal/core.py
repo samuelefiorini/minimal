@@ -117,10 +117,10 @@ def model_selection(data, labels, tau_range, algorithm='ISTA', cv_split=5):
         for j, W in enumerate(Ws):
             Y_pred_tr = np.dot(X_tr, W)
             Y_pred_vld = np.dot(X_vld, W)
-            vld_errors[i, j] = np.linalg.norm((Y_vld - Y_pred_vld),
-                                              ord='fro') / len(Y_vld)
-            tr_errors[i, j] = np.linalg.norm((Y_tr - Y_pred_tr),
-                                              ord='fro') / len(Y_tr)
+            vld_errors[i, j] = (np.linalg.norm((Y_vld - Y_pred_vld),
+                                               ord='fro') ** 2) / len(Y_vld)
+            tr_errors[i, j] = (np.linalg.norm((Y_tr - Y_pred_tr),
+                                              ord='fro') ** 2) / len(Y_tr)
 
     # Once all the training is done, get the best tau
     avg_vld_err = np.mean(vld_errors, axis=0)

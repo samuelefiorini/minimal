@@ -66,7 +66,7 @@ def main(config_file):
                    ncol=2, mode="expand", borderaxespad=0.)
     sns.plt.title("{}-Fold cross-validation error".format(cv_split))
     sns.plt.xlabel(r"$log_{10}(\tau)$")
-    sns.plt.ylabel(r"$\frac{1}{n}||Y_{vld} - Y_{pred}||_F$")
+    sns.plt.ylabel(r"$\frac{1}{n}||Y - Y_{pred}||_F^2$")
     sns.plt.savefig(filename)
     print("* Plot generated in {}".format(filename))
     print("-------------------------------------")

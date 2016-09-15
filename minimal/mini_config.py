@@ -12,7 +12,7 @@ import numpy as np
 from minimal import data_source
 
 # -------------------------- CONTEXT INFO ---------------------------- #
-exp_tag = 'minimal_dev'
+exp_tag = 'dev'
 output_root_folder = 'results'
 plotting_context = 'notebook'  # one of {paper, notebook, talk, poster}
 file_format = 'pdf'  # or 'png'
@@ -31,7 +31,7 @@ file_format = 'pdf'  # or 'png'
 #                                               d=7, T=5, sigma=5)
 X, Y, feat_names, index, W = data_source.load(opt='synthetic',
                                               n_samples=1300,
-                                              d=150, T=30, sigma=5)
+                                              d=150, T=30, sigma=25)
 
 
 # ---------------------------- EXPERIMENT SETTING -------------------- #

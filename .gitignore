@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# minimal results
+results/*
+
 # C extensions
 *.so
 
