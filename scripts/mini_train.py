@@ -22,7 +22,7 @@ import pandas as pd
 
 
 def main(config_file):
-    """Import configuration file and run VVR."""
+    """Import configuration file and train Minimal."""
     # Load the configuration file
     config_path = os.path.abspath(config_file)
     config = imp.load_source('mini_config', config_path)
