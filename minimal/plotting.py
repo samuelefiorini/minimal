@@ -40,7 +40,8 @@ def lite_errors(results, cv_split, filename, file_format='png',
     sns.plt.savefig(filename+'_lite_.'+file_format)
 
 
-def errors(results, cv_split, filename, file_format='png', context='notebook'):
+def errors(results, cv_split, filename, test_error=None,
+           file_format='png', context='notebook'):
     """Plot training/validation error curves.
 
     This function follows the tutorial available at:
@@ -50,6 +51,18 @@ def errors(results, cv_split, filename, file_format='png', context='notebook'):
     -----------
     results : dictionary
         output of minimal.core.model_selection
+    cv_split : int (optional, default=5)
+        the number of K-fold cross-validation split used to perform parameter
+        selection
+    filename : string
+        the output filename
+    test_error : float (optional, default=None)
+        when not none, a the test error is represented as dashed
+        horizontal line
+    file_format : string
+        this could be 'png', 'pdf' and so on
+    context : string (optional, default 'notebook')
+        the seaborn plotting context
     """
     sns.plt.clf()
     sns.set_context(context)
@@ -80,9 +93,16 @@ def errors(results, cv_split, filename, file_format='png', context='notebook'):
                condition="condition", value="errors")
     sns.plt.semilogx(results['opt_tau'], min(results['avg_vld_err']),
                      'h', label=r'opt $\tau$', c='#a40000')
+
+    # Check if the test error should be represented or not
+    if test_error is not None:
+        sns.plt.axhline(test_error, linestyle='dashed', label='test error',
+                        color=sns.xkcd_rgb['dark brown'])
+
     sns.plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
                    ncol=2, mode="expand", borderaxespad=0.)
     sns.plt.title("{}-Fold cross-validation error".format(cv_split))
     sns.plt.xlabel(r"$log_{10}(\tau)$")
     sns.plt.ylabel(r"$\frac{1}{n}||Y - Y_{pred}||_F^2$")
+
     sns.plt.savefig(filename+'.'+file_format)

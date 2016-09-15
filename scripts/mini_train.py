@@ -34,7 +34,7 @@ def main(config_file):
     minimization = config.minimization_algorithm
     cv_split = config.cross_validation_split
 
-    print("-------------- Minimal --------------")
+    print("-------------- Minimal training --------------")
     print("* Data matrix:\t\t   {} x {}".format(*data.shape))
     print("* Labels matrix:\t   {} x {}".format(*labels.shape))
     print("* Minimization algorithm:  {}".format(minimization))
@@ -71,10 +71,11 @@ def main(config_file):
 
     # Save simple cross-validation error plots
     filename = os.path.join(folder, 'cv-errors')
-    mini.plotting.errors(out, cv_split, filename, config.file_format,
-                         config.plotting_context)
+    mini.plotting.errors(results=out, cv_split=cv_split, filename=filename,
+                         file_format=config.file_format,
+                         context=config.plotting_context)
     print("* Plot generated in {}".format(filename))
-    print("-------------------------------------")
+    print("----------------------------------------------")
 
 
 ######################################################################

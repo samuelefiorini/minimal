@@ -29,5 +29,18 @@ X, Y, feat_names, index = data_source.load('custom',
 
 # ---------------------------- EXPERIMENT SETTING -------------------- #
 minimization_algorithm = 'FISTA'  # in ['ISTA', 'FISTA']
-cross_validation_split = 5  # number of Kfold CV split for parameter selection
+cross_validation_split = 5  # number of Kfold CV split for param. selection
 tau_range = np.logspace(-3, 0, 20)  # scaling factors for TAU_MAX
+
+##########################################################################
+
+# ---------------------------- TEST DATA----------------------------- #
+test_data_file = 'data/test_data.csv'
+test_labels_file = 'data/test_labels.csv'  # OPTIONAL
+samples_on = 'rows'  # if samples lie on columns use 'cols' or 'col'
+data_sep = ','  # the data separator. e.g., ',', '\t', ' ', ...
+test_X, test_Y, _, test_index = data_source.load('custom',
+                                                 test_data_file,
+                                                 test_labels_file,
+                                                 samples_on=samples_on,
+                                                 sep=data_sep)

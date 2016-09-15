@@ -123,9 +123,9 @@ def model_selection(data, labels, tau_range, algorithm='FISTA', cv_split=5):
             Y_pred_tr = np.dot(X_tr, W)
             Y_pred_vld = np.dot(X_vld, W)
             vld_errors[i, j] = (np.linalg.norm((Y_vld - Y_pred_vld),
-                                               ord='fro') ** 2) / len(Y_vld)
+                                               ord='fro')**2)/Y_vld.shape[0]
             tr_errors[i, j] = (np.linalg.norm((Y_tr - Y_pred_tr),
-                                              ord='fro') ** 2) / len(Y_tr)
+                                              ord='fro')**2)/Y_tr.shape[0]
 
     # Once all the training is done, get the best tau
     avg_vld_err = np.mean(vld_errors, axis=0)
@@ -133,7 +133,7 @@ def model_selection(data, labels, tau_range, algorithm='FISTA', cv_split=5):
     opt_tau = scaled_tau_range[np.argmin(avg_vld_err)]
 
     # Refit and return the best model
-    W_hat = minimizer(data, labels, opt_tau)
+    W_hat, _ = minimizer(data, labels, opt_tau)
 
     # Output container
     out = {'tau_range': scaled_tau_range,

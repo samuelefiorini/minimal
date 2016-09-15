@@ -17,20 +17,45 @@ import sys
 import os
 import argparse
 import cPickle as pkl
+import numpy as np
 import minimal as mini
 
 
 def main(root):
     """Import trained model and test Minimal."""
-    # Load test set
+    # Load the configuration file
+    config_path = os.path.abspath(os.path.join(root, 'mini_config.py'))
+    config = imp.load_source('mini_config', config_path)
+
+    # Extract the needed information from config
+    test_data = config.test_X  # (n, d) test data matrix
+    test_labels = config.test_Y  # (d, T) test labels matrix
+    cv_split = config.cross_validation_split
+
+    print("-------------- Minimal test ------------------")
+    print("* Data matrix:\t\t   {} x {}".format(*test_data.shape))
+    print("* Labels matrix:\t   {} x {}".format(*test_labels.shape))
 
     # Load trained model
-    res_file = os.path.join(os.path.abspath(root), filename[0])
+    res_file = os.path.join(os.path.abspath(root), 'results.pkl')
     with open(res_file, 'r') as f:
         results = pkl.load(f)
 
-    print results
+    # Get the weights
+    W_hat = results['W_hat']
 
+    # Predict the labels of the test set
+    pred_labels = np.dot(test_data, W_hat)
+    pred_error = (np.linalg.norm((test_labels - pred_labels),
+                  ord='fro') ** 2) / test_labels.shape[0]
+
+    print("* Prediction error:\t   {:.4}".format(pred_error))
+    filename = os.path.join(root, 'cv-errors')
+    mini.plotting.errors(results=results, cv_split=cv_split, filename=filename,
+                         test_error=pred_error,
+                         file_format=config.file_format,
+                         context=config.plotting_context)
+    print("----------------------------------------------")
 
 
 ######################################################################
