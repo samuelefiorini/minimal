@@ -23,12 +23,11 @@ from sklearn.cross_validation import KFold, train_test_split
 from minimal import tools
 
 
-def kf_worker(minimizer, X_tr, Y_tr, tau_range, i, results):
+def kf_worker(minimizer, X_tr, Y_tr, tau_range, tr_idx, vld_idx, i, results):
     """Worker for parallel KFold implementation."""
     Ws, _, _ = trace_norm_path(minimizer, X_tr, Y_tr,
                                tau_range, loss='square')
-    # results[i] = Ws
-    return Ws
+    results[i] = {'W': Ws, 'tr_idx': tr_idx, 'vld_idx': vld_idx}
 
 
 def model_selection(data, labels, tau_range, algorithm='ISTA', cv_split=5):
@@ -82,58 +81,46 @@ def model_selection(data, labels, tau_range, algorithm='ISTA', cv_split=5):
     scaled_tau_range = tau_range * max_tau
 
     # Kfold starts here
-    # kf = KFold(n=n, n_folds=cv_split)
+    kf = KFold(n=n, n_folds=cv_split)
     jobs = []  # multiprocessing job list
     results = mp.Manager().dict()  # dictionary shared among processess
 
     # Submit each kfold job
-    # for i, (tr_idx, vld_idx) in enumerate(kf):
-    #     X_tr = data[tr_idx, :]
-    #     Y_tr = labels[tr_idx, :]
-    #     X_vld = data[vld_idx, :]
-    #     Y_vld = labels[vld_idx, :]
+    for i, (tr_idx, vld_idx) in enumerate(kf):
+        X_tr = data[tr_idx, :]
+        Y_tr = labels[tr_idx, :]
+        X_vld = data[vld_idx, :]
+        Y_vld = labels[vld_idx, :]
+
+        p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
+                                               Y_tr, tau_range * max_tau,
+                                               tr_idx, vld_idx,
+                                               i, results))
+        jobs.append(p)
+        p.start()
+
+    # Collect the results
+    for p in jobs:
+        p.join()
+
+    # Evaluate the errors
     tr_errors = np.zeros((cv_split, len(tau_range)))
     vld_errors = np.zeros((cv_split, len(tau_range)))
-    for i in range(cv_split):
-        X_tr, X_vld, Y_tr, Y_vld = train_test_split(data, labels,
-                                                    test_size=0.33)
-        # print tr_idx
-        # print vld_idx
-
-        # kf_worker(minimizer, X_tr, Y_tr, scaled_tau_range)
-        # break
-        Ws, _, _ = trace_norm_path(minimizer, X_tr, Y_tr,
-                                   scaled_tau_range, loss='square')
-        # results[i] = Ws
+    for i in results.keys():
+        Ws = results[i]['W']
+        tr_idx = results[i]['tr_idx']
+        vld_idx = results[i]['vld_idx']
+        X_tr = data[tr_idx, :]
+        Y_tr = labels[tr_idx, :]
+        X_vld = data[vld_idx, :]
+        Y_vld = labels[vld_idx, :]
         for j, W in enumerate(Ws):
             Y_pred_tr = np.dot(X_tr, W)
             Y_pred_vld = np.dot(X_vld, W)
-            vld_errors[i, j] = np.linalg.norm((Y_vld - Y_pred_vld), ord='fro')
-            tr_errors[i, j] = np.linalg.norm((Y_tr - Y_pred_tr), ord='fro')
-
-
-    #     p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
-    #                                            Y_tr, tau_range * max_tau,
-    #                                            i, results))
-    #     jobs.append(p)
-    #     p.start()
-    #
-    # # Collect the results
-    # for p in jobs:
-    #     p.join()
-
-    # Evaluate the errors
-    # tr_errors = np.zeros((1, len(scaled_tau_range)))
-    # vld_errors = np.zeros((1, len(scaled_tau_range)))
-    # for i in results.keys():
-    #     Ws = results[i]
-    #     for j, W in enumerate(Ws):
-    #         Y_pred_tr = np.dot(X_tr, W)
-    #         Y_pred_vld = np.dot(X_vld, W)
-    #         vld_errors[i, j] = np.linalg.norm((Y_vld - Y_pred_vld), ord='fro')
-    #         tr_errors[i, j] = np.linalg.norm((Y_tr - Y_pred_tr), ord='fro')
-
-    print vld_errors
+            vld_errors[i, j] = np.linalg.norm((Y_vld - Y_pred_vld),
+                                              ord='fro') / len(Y_vld)
+            tr_errors[i, j] = np.linalg.norm((Y_tr - Y_pred_tr),
+                                              ord='fro') / len(Y_tr)
 
     # Once all the training is done, get the best tau
     avg_vld_err = np.mean(vld_errors, axis=0)
