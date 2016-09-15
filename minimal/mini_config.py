@@ -15,7 +15,7 @@ from minimal import data_source
 exp_tag = 'dev'
 output_root_folder = 'results'
 plotting_context = 'notebook'  # one of {paper, notebook, talk, poster}
-file_format = 'pdf'  # or 'png'
+file_format = 'png'  # or 'pdf'
 
 # ---------------------------- INPUT DATA ---------------------------- #
 # data_file = 'data.csv'

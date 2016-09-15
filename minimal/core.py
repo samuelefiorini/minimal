@@ -133,7 +133,9 @@ def model_selection(data, labels, tau_range, algorithm='ISTA', cv_split=5):
     # Output container
     out = {'tau_range': scaled_tau_range,
            'opt_tau': opt_tau,
-           'tr_err': avg_tr_err,
-           'vld_err': avg_vld_err,
+           'avg_tr_err': avg_tr_err,
+           'avg_vld_err': avg_vld_err,
+           'tr_err': tr_errors,
+           'vld_err': vld_errors,
            'W_hat': W_hat}
     return out

@@ -70,8 +70,9 @@ def main(config_file):
     print("* Results dumped in {}".format(filename))
 
     # Save simple cross-validation error plots
-    filename = os.path.join(folder, 'cv-errors.pdf')
-    mini.plotting.errors(out, cv_split, filename)
+    filename = os.path.join(folder, 'cv-errors')
+    mini.plotting.errors(out, cv_split, filename, config.file_format,
+                         config.plotting_context)
     print("* Plot generated in {}".format(filename))
     print("-------------------------------------")
 
