@@ -63,6 +63,7 @@ def load_custom(x_filename, y_filename, samples_on='rows', **kwargs):
             # data matrix must be n_samples x n_features
             X = X.T
         return datasets.base.Bunch(data=X, target=y,
+                                   feature_names=[None, None],
                                    index=np.arange(X.shape[0]))
 
     elif x_filename.endswith('.csv') or x_filename.endswith('.txt'):
@@ -78,15 +79,20 @@ def load_custom(x_filename, y_filename, samples_on='rows', **kwargs):
                 # Before loading labels, remove parameters that were likely
                 # specified for data only.
                 kwargs.pop('usecols', None)
-                y = pd.read_csv(y_filename, **kwargs).as_matrix().ravel()
+                dfy = pd.read_csv(y_filename, **kwargs)
+                y = dfy.as_matrix().ravel()
 
         except IOError as e:
             e.strerror = "Can't open {} or {}".format(x_filename, y_filename)
             logging.error("I/O error({0}): {1}".format(e.errno, e.strerror))
             sys.exit(-1)
 
+        _featsX = dfx.columns.tolist()
+        _featsY = dfy.columns.tolist()
+        _feats = [_featsX, _featsY]
+
         return datasets.base.Bunch(data=dfx.as_matrix(),
-                                   feature_names=dfx.columns.tolist(),
+                                   feature_names=_feats,
                                    target=y, index=dfx.index.tolist())
 
 
@@ -146,7 +152,9 @@ def make_multitask(n=100, d=150, T=1, amplitude=3.5, sigma=1,
         np.random.set_state(state0)
 
     # Crate dummy names for variables and samples
-    _feats = ['feat_'+str(i) for i in range(X.shape[1])]
+    _featsX = ['featX_'+str(i) for i in range(X.shape[1])]
+    _featsY = ['featY_'+str(i) for i in range(Y.shape[1])]
+    _feats = [_featsX, _featsY]
     _indexes = ['sample_'+str(i) for i in range(X.shape[0])]
 
     return datasets.base.Bunch(data=X,

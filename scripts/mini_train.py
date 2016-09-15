@@ -17,8 +17,8 @@ import shutil
 import argparse
 import os
 import cPickle as pkl
-import seaborn as sns
 import minimal as mini
+import pandas as pd
 
 
 def main(config_file):
@@ -45,29 +45,33 @@ def main(config_file):
                                     tau_range=tau_range,
                                     algorithm=minimization,
                                     cv_split=cv_split)
-    # Dump results
+    # Initialize output folder
     root = config.output_root_folder
     folder = os.path.join(root, '_'.join(('mini', config.exp_tag,
-                                          mini.extra.get_time())))
-    filename = os.path.join(folder, 'results.pkl')
+                          mini.extra.get_time())))
     if not os.path.exists(folder):
         os.makedirs(folder)
+
+    # Copy the configuration file into the output folder
+    shutil.copy(config_path, os.path.join(folder, 'mini_config.py'))
+
+    # Save the input data
+    dfX = pd.DataFrame(data=data, index=config.index,
+                       columns=config.feat_names[0])
+    dfX.to_csv(os.path.join(folder, 'data'))
+    dfY = pd.DataFrame(data=labels, index=config.index,
+                       columns=config.feat_names[1])
+    dfY.to_csv(os.path.join(folder, 'labels'))
+
+    # Dump results
+    filename = os.path.join(folder, 'results.pkl')
     with open(filename, 'w') as f:
         pkl.dump(out, f)
     print("* Results dumped in {}".format(filename))
 
     # Save simple cross-validation error plots
     filename = os.path.join(folder, 'cv-errors.pdf')
-    sns.plt.semilogx(out['tau_range'], out['tr_err'], '-o', label='tr error')
-    sns.plt.semilogx(out['tau_range'], out['vld_err'], '-o', label='vld error')
-    sns.plt.semilogx(out['opt_tau'], min(out['vld_err']),
-                     'h', label=r'opt $\tau$', c='#a40000')
-    sns.plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-                   ncol=2, mode="expand", borderaxespad=0.)
-    sns.plt.title("{}-Fold cross-validation error".format(cv_split))
-    sns.plt.xlabel(r"$log_{10}(\tau)$")
-    sns.plt.ylabel(r"$\frac{1}{n}||Y - Y_{pred}||_F^2$")
-    sns.plt.savefig(filename)
+    mini.plotting.errors(out, cv_split, filename)
     print("* Plot generated in {}".format(filename))
     print("-------------------------------------")
 
