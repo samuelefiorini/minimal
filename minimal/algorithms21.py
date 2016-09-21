@@ -19,63 +19,15 @@ from collections import deque
 from . import tools
 
 
-def trace_norm_path(minimization_algorithm, data, labels, tau_range,
-                    loss='square', **kwargs):
-    """Solution of a trace-norm penalized VVR with warm restart.
-
-    Parameters
-    ----------
-    minimization_algorithm : callable
-        the algorithm of choice
-        e.g.: trace_norm_minimization or accelerated_trace_norm_minimization
-    loss : string
-        the selected loss function in {'square', 'logit'}
-    data : (n, d) float ndarray
-        training data matrix
-    labels : (n, T) float ndarray
-        training labels matrix
-    tau_range : (n_tau, ) float ndarray
-        range of regularization parameters
-    **kwargs : dictionary of keyword-only arguments
-        the input list of arguments fed to the minization algorithm of choice
-
-    Returns
-    -------
-    W_list : (n_tau, ) list of (d, T) matrices
-        the solutions corresponding to the input tau_range
-    obj_list : (n_tau, ) list of float
-        the values of the objective function at convergence
-    iter_list : (n_tau, ) list of float
-        the number of iterations corresponding to each tau
-    """
-    # Define output containers
-    W_list = list()
-    obj_list = list()
-    iter_list = list()
-
-    # Initialize Wstart at 0 (then, warm restart)
-    Wstart = None
-
-    # Evaluate the tau grid
-    for tau in tau_range:
-        W, obj, k = minimization_algorithm(data, labels, tau, Wstart,
-                                           loss, return_iter=True, **kwargs)
-        W_list.append(W)
-        obj_list.append(obj)
-        iter_list.append(k)
-        Wstart = W.copy()
-
-    return W_list, obj_list, iter_list
-
-
-def trace_norm_minimization(data, labels, tau, Wstart=None,
-                            loss='square', tol=1e-5, max_iter=50000,
-                            return_iter=False):
-    """Solution of trace-norm penalized vector-valued regression problems.
+def l21_norm_minimization(data, labels, tau, Wstart=None,
+                          loss='square', penalty='trace',
+                          tol=1e-5, max_iter=50000,
+                          return_iter=False):
+    """Solution of l2,1-norm penalized vector-valued regression problems.
 
     Comput the solution of the learning problem
 
-                min loss(Y, XW) + tau ||W||_*
+                min loss(Y, XW) + tau ||W||_2,1
                  W
 
     where the samples are stored row-wise in X, W is the matrix to be learned
@@ -95,8 +47,13 @@ def trace_norm_minimization(data, labels, tau, Wstart=None,
         regularization parameter
     Wstart : (d, T) float array
         starting point for the iterative minization algorithm
-    loss : string
-        the selected loss function in {'square', 'logit'}. Default is 'square'
+    loss : string in {'square', 'logit'}
+        the selected loss function, this could be either 'square' or 'logit'
+        ('logit' not yet implemeted)
+    penalty : string in {'trace', 'l21', 'l21_lfro'}
+        the penalty to be used, this could be 'trace' for
+        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
+        'l21_lfro' for multi-task elastic-net.
     tol : float
         stopping rule tolerance. Default is 1e-5.
     max_iter : int
@@ -138,11 +95,12 @@ def trace_norm_minimization(data, labels, tau, Wstart=None,
     # Start iterative method
     for k in range(max_iter):
         # Compute proximal gradient step
-        W_next = tools.trace_norm_prox(Wk - gamma * grad(data, labels, Wk),
-                                       alpha=tau*gamma)
+        W_next = tools.l21_norm_prox(Wk - gamma * grad(data, labels, Wk),
+                                     alpha=tau*gamma)
 
         # Compute the value of the objective function
-        obj_next = tools.objective_function(data, labels, W_next, loss)
+        obj_next = tools.objective_function(data, labels, W_next,
+                                            loss, penalty)
 
         # Check stopping criterion
         if np.abs((objk - obj_next) / objk) <= tol:
@@ -158,10 +116,10 @@ def trace_norm_minimization(data, labels, tau, Wstart=None,
         return Wk, obj_list[-1]
 
 
-def accelerated_trace_norm_minimization(data, labels, tau, Wstart=None,
-                                        loss='square', tol=1e-5,
-                                        max_iter=50000,
-                                        return_iter=False):
+def accelerated_l21_norm_minimization(data, labels, tau, Wstart=None,
+                                      loss='square', penalty='trace', tol=1e-5,
+                                      max_iter=50000,
+                                      return_iter=False):
     """Fast solution of trace-norm penalized vector-valued regression problems.
 
     Compute the solution of the learning problem
@@ -197,8 +155,13 @@ def accelerated_trace_norm_minimization(data, labels, tau, Wstart=None,
         regularization parameter
     Wstart : (d, T) float array
         starting point for the iterative minization algorithm
-    loss : string
-        the selected loss function in {'square', 'logit'}. Default is 'square'
+    loss : string in {'square', 'logit'}
+        the selected loss function, this could be either 'square' or 'logit'
+        ('logit' not yet implemeted)
+    penalty : string in {'trace', 'l21', 'l21_lfro'}
+        the penalty to be used, this could be 'trace' for
+        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
+        'l21_lfro' for multi-task elastic-net.
     tol : float
         stopping rule tolerance. Default is 1e-5.
     max_iter : int
@@ -247,11 +210,11 @@ def accelerated_trace_norm_minimization(data, labels, tau, Wstart=None,
     # Start iterative method
     for k in range(max_iter):
         # Compute proximal gradient step
-        Wk = tools.trace_norm_prox(Zk - gamma * grad(data, labels, Zk),
-                                   alpha=tau*gamma)
+        Wk = tools.l21_norm_prox(Zk - gamma * grad(data, labels, Zk),
+                                 alpha=tau*gamma)
 
         # Compute the value of the objective function
-        obj_next = tools.objective_function(data, labels, Wk, loss)
+        obj_next = tools.objective_function(data, labels, Wk, loss, penalty)
 
         # Check stopping criterion
         # if np.abs((objk - obj_next) / objk) <= tol:

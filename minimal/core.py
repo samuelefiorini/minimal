@@ -16,7 +16,6 @@ from __future__ import division
 import sys
 import multiprocessing as mp
 import numpy as np
-from minimal.algorithms import regularization_path
 from minimal.algorithms import trace_norm_minimization
 from minimal.algorithms import accelerated_trace_norm_minimization
 from minimal.algorithms21 import l21_norm_minimization
@@ -90,8 +89,8 @@ def get_minimizer(algorithm='FISTA', penalty='trace'):
 def kf_worker(minimizer, X_tr, Y_tr, tau_range, loss, tr_idx, vld_idx, i,
               results):
     """Worker for parallel KFold implementation."""
-    Ws, _, _ = regularization_path(minimizer, X_tr, Y_tr,
-                                   tau_range, loss)
+    Ws, _, _ = tools.regularization_path(minimizer, X_tr, Y_tr,
+                                         tau_range, loss)
     results[i] = {'W': Ws, 'tr_idx': tr_idx, 'vld_idx': vld_idx}
 
 

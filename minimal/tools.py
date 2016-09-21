@@ -175,7 +175,7 @@ def l21_norm_bound(X, Y, loss='square'):
         sys.exit(-1)
 
 
-def objective_function(data, labels, W, loss='square'):
+def objective_function(data, labels, W, loss='square', penalty='trace'):
     """Evaluate the objective function at a given point.
 
     This function evaluates the objective function loss(Y, XW) + tau ||W||_*.
@@ -186,20 +186,37 @@ def objective_function(data, labels, W, loss='square'):
         data matrix
     labels : (n, T) float ndarray
         labels matrix
-    loss : string
-        the selected loss function in {'square', 'logit'}. Default is 'square'
+    loss : string in {'square', 'logit'}
+        the selected loss function, this could be either 'square' or 'logit'
+        ('logit' not yet implemeted)
+    penalty : string in {'trace', 'l21', 'l21_lfro'}
+        the penalty to be used, this could be 'trace' for
+        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
+        'l21_lfro' for multi-task elastic-net.
 
     Returns
     ----------
     obj : float
         the value of the objective function at a given point
     """
+    # Check loss
     if loss.lower() == 'square':
-        fun = square_loss
-        return fun(data, labels, W) + np.linalg.norm(W, ord='nuc')
+        lossfun = square_loss
     else:
         print('Only square loss implemented so far.')
         sys.exit(-1)
+
+    # Check penalty
+    if penalty.lower() == 'trace':
+        penaltyfun = lambda x: np.linalg.norm(x, ord='nuc')
+    elif penalty.lower() == 'l21':
+        # L21 is the sum of the Euclidean norms of of the columns of the matrix
+        penaltyfun = lambda W: sum(map(lambda w: np.linalg.norm(w, ord=2), W.T))
+    else:
+        print('Only trace and l2,1 norms implemeted so far.')
+        sys.exit(-1)
+
+    return lossfun(data, labels, W) + penaltyfun(W)
 
 
 def trace_norm_prox(W, alpha):
@@ -262,3 +279,52 @@ def l21_norm_prox(W, alpha):
 
     # Return the Hadamard-product between Wst and W
     return W * Wst
+
+
+def regularization_path(minimization_algorithm, data, labels, tau_range,
+                    loss='square', **kwargs):
+    """Solution of a trace-norm penalized VVR with warm restart.
+
+    Parameters
+    ----------
+    minimization_algorithm : callable
+        the algorithm of choice
+        e.g.: trace_norm_minimization or accelerated_trace_norm_minimization
+    loss : string
+        the selected loss function in {'square', 'logit'}
+    data : (n, d) float ndarray
+        training data matrix
+    labels : (n, T) float ndarray
+        training labels matrix
+    tau_range : (n_tau, ) float ndarray
+        range of regularization parameters
+    **kwargs : dictionary of keyword-only arguments
+        the input list of arguments fed to the minization algorithm of choice
+
+    Returns
+    -------
+    W_list : (n_tau, ) list of (d, T) matrices
+        the solutions corresponding to the input tau_range
+    obj_list : (n_tau, ) list of float
+        the values of the objective function at convergence
+    iter_list : (n_tau, ) list of float
+        the number of iterations corresponding to each tau
+    """
+    # Define output containers
+    W_list = list()
+    obj_list = list()
+    iter_list = list()
+
+    # Initialize Wstart at 0 (then, warm restart)
+    Wstart = None
+
+    # Evaluate the tau grid
+    for tau in tau_range:
+        W, obj, k = minimization_algorithm(data, labels, tau, Wstart,
+                                           loss, return_iter=True, **kwargs)
+        W_list.append(W)
+        obj_list.append(obj)
+        iter_list.append(k)
+        Wstart = W.copy()
+
+    return W_list, obj_list, iter_list

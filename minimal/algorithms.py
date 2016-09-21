@@ -19,55 +19,6 @@ from collections import deque
 from . import tools
 
 
-def regularization_path(minimization_algorithm, data, labels, tau_range,
-                    loss='square', **kwargs):
-    """Solution of a trace-norm penalized VVR with warm restart.
-
-    Parameters
-    ----------
-    minimization_algorithm : callable
-        the algorithm of choice
-        e.g.: trace_norm_minimization or accelerated_trace_norm_minimization
-    loss : string
-        the selected loss function in {'square', 'logit'}
-    data : (n, d) float ndarray
-        training data matrix
-    labels : (n, T) float ndarray
-        training labels matrix
-    tau_range : (n_tau, ) float ndarray
-        range of regularization parameters
-    **kwargs : dictionary of keyword-only arguments
-        the input list of arguments fed to the minization algorithm of choice
-
-    Returns
-    -------
-    W_list : (n_tau, ) list of (d, T) matrices
-        the solutions corresponding to the input tau_range
-    obj_list : (n_tau, ) list of float
-        the values of the objective function at convergence
-    iter_list : (n_tau, ) list of float
-        the number of iterations corresponding to each tau
-    """
-    # Define output containers
-    W_list = list()
-    obj_list = list()
-    iter_list = list()
-
-    # Initialize Wstart at 0 (then, warm restart)
-    Wstart = None
-
-    # Evaluate the tau grid
-    for tau in tau_range:
-        W, obj, k = minimization_algorithm(data, labels, tau, Wstart,
-                                           loss, return_iter=True, **kwargs)
-        W_list.append(W)
-        obj_list.append(obj)
-        iter_list.append(k)
-        Wstart = W.copy()
-
-    return W_list, obj_list, iter_list
-
-
 def trace_norm_minimization(data, labels, tau, Wstart=None,
                             loss='square', tol=1e-5, max_iter=50000,
                             return_iter=False):
