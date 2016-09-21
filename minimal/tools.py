@@ -124,7 +124,7 @@ def soft_thresholding(w, alpha):
 
 
 def trace_norm_bound(X, Y, loss='square'):
-    """Compute maximum value for the trace norm parameter.
+    """Compute maximum value for the trace norm regularization parameter.
 
     Parameters
     ----------
@@ -141,8 +141,35 @@ def trace_norm_bound(X, Y, loss='square'):
         maximum value for the trace norm regularization parameter
     """
     if loss.lower() == 'square':
-        # In this case max_tau := 2/n * max_sing_val(X^T Y)
+        # In this case max_tau := 2/n * max_sing_val(X^T * Y)
         return np.linalg.norm(np.dot(X.T, Y), ord=2) * (2.0/X.shape[0])
+    else:
+        print('Only square loss implemented so far.')
+        sys.exit(-1)
+
+
+def l21_norm_bound(X, Y, loss='square'):
+    """Compute maximum value for the l12-norm regularization parameter.
+
+    Parameters
+    ----------
+    data : (n, d) float ndarray
+        data matrix
+    labels : (n, T) float ndarray
+        labels matrix
+    loss : string
+        the selected loss function in {'square', 'logit'}. Default is 'square'
+
+    Returns
+    ----------
+    max_tau : float
+        maximum value for the l21-norm regularization parameter
+    """
+    if loss.lower() == 'square':
+        # In this case max_tau := 2/n * max(||[X^T * Y]s||_2)
+        # First compute the 2-norm of each row of X^T * Y
+        norm2 = map(lambda x: np.linalg.norm(x, ord=2), X.T.dot(Y))
+        return np.max(norm2) * (2.0/X.shape[0])
     else:
         print('Only square loss implemented so far.')
         sys.exit(-1)
@@ -205,3 +232,33 @@ def trace_norm_prox(W, alpha):
     else:
         st_S = np.hstack((np.diag(s), np.zeros((d, np.abs(d-T)))))
     return np.dot(U, np.dot(st_S, V))
+
+
+def l21_norm_prox(W, alpha):
+    """Compute l2,1-norm proximal operator on W.
+
+    This function returns: prox             (W)
+                             alpha ||.||_2,1
+
+    Parameters
+    ----------
+    W : (n1, n2) float ndarray
+        proximal operator input
+    alpha : float
+        proximal threshold
+
+    Returns
+    ----------
+    Wt : (n1, n2) float ndarray
+        l2,1-norm prox result
+    """
+    d, T = W.shape
+
+    # Compute the soft-thresholding operator for each row of an unitary matrix
+    ones = np.ones(d)
+    Wst = np.empty_like(W)
+    for i, Wi in enumerate(W):
+        Wst[i, :] = soft_thresholding(ones, alpha / np.dot(Wi.T, Wi))
+
+    # Return the Hadamard-product between Wst and W
+    return W * Wst

@@ -19,7 +19,7 @@ from collections import deque
 from . import tools
 
 
-def regularization_path(minimization_algorithm, data, labels, tau_range,
+def trace_norm_path(minimization_algorithm, data, labels, tau_range,
                     loss='square', **kwargs):
     """Solution of a trace-norm penalized VVR with warm restart.
 
