@@ -157,19 +157,16 @@ def model_selection(data, labels, tau_range, algorithm='FISTA', loss='square',
         X_vld = data[vld_idx, :]
         Y_vld = labels[vld_idx, :]
 
-        kf_worker(minimizer, X_tr, Y_tr, tau_range * max_tau, loss,
-                  penalty, tr_idx, vld_idx, i, results)
+        p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
+                                               Y_tr, tau_range * max_tau, loss,
+                                               penalty, tr_idx, vld_idx,
+                                               i, results))
+        jobs.append(p)
+        p.start()
 
-    #     p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
-    #                                            Y_tr, tau_range * max_tau, loss,
-    #                                            penalty, tr_idx, vld_idx,
-    #                                            i, results))
-    #     jobs.append(p)
-    #     p.start()
-    #
-    # # Collect the results
-    # for p in jobs:
-    #     p.join()
+    # Collect the results
+    for p in jobs:
+        p.join()
 
     # Evaluate the errors
     tr_errors = np.zeros((cv_split, len(tau_range)))
