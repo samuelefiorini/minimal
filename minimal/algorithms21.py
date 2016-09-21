@@ -19,14 +19,15 @@ from collections import deque
 from . import tools
 
 
-def trace_norm_minimization(data, labels, tau, Wstart=None,
-                            loss='square', tol=1e-5, max_iter=50000,
-                            return_iter=False):
-    """Solution of trace-norm penalized vector-valued regression problems.
+def l21_norm_minimization(data, labels, tau, Wstart=None,
+                          loss='square', penalty='trace',
+                          tol=1e-5, max_iter=50000,
+                          return_iter=False):
+    """Solution of l2,1-norm penalized vector-valued regression problems.
 
     Comput the solution of the learning problem
 
-                min loss(Y, XW) + tau ||W||_*
+                min loss(Y, XW) + tau ||W||_2,1
                  W
 
     where the samples are stored row-wise in X, W is the matrix to be learned
@@ -46,8 +47,13 @@ def trace_norm_minimization(data, labels, tau, Wstart=None,
         regularization parameter
     Wstart : (d, T) float array
         starting point for the iterative minization algorithm
-    loss : string
-        the selected loss function in {'square', 'logit'}. Default is 'square'
+    loss : string in {'square', 'logit'}
+        the selected loss function, this could be either 'square' or 'logit'
+        ('logit' not yet implemeted)
+    penalty : string in {'trace', 'l21', 'l21_lfro'}
+        the penalty to be used, this could be 'trace' for
+        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
+        'l21_lfro' for multi-task elastic-net.
     tol : float
         stopping rule tolerance. Default is 1e-5.
     max_iter : int
@@ -89,11 +95,12 @@ def trace_norm_minimization(data, labels, tau, Wstart=None,
     # Start iterative method
     for k in range(max_iter):
         # Compute proximal gradient step
-        W_next = tools.trace_norm_prox(Wk - gamma * grad(data, labels, Wk),
-                                       alpha=tau*gamma)
+        W_next = tools.l21_norm_prox(Wk - gamma * grad(data, labels, Wk),
+                                     alpha=tau*gamma)
 
         # Compute the value of the objective function
-        obj_next = tools.objective_function(data, labels, W_next, loss)
+        obj_next = tools.objective_function(data, labels, W_next,
+                                            loss, penalty)
 
         # Check stopping criterion
         if np.abs((objk - obj_next) / objk) <= tol:
@@ -109,10 +116,10 @@ def trace_norm_minimization(data, labels, tau, Wstart=None,
         return Wk, obj_list[-1]
 
 
-def accelerated_trace_norm_minimization(data, labels, tau, Wstart=None,
-                                        loss='square', tol=1e-5,
-                                        max_iter=50000,
-                                        return_iter=False):
+def accelerated_l21_norm_minimization(data, labels, tau, Wstart=None,
+                                      loss='square', penalty='trace', tol=1e-5,
+                                      max_iter=50000,
+                                      return_iter=False):
     """Fast solution of trace-norm penalized vector-valued regression problems.
 
     Compute the solution of the learning problem
@@ -148,8 +155,13 @@ def accelerated_trace_norm_minimization(data, labels, tau, Wstart=None,
         regularization parameter
     Wstart : (d, T) float array
         starting point for the iterative minization algorithm
-    loss : string
-        the selected loss function in {'square', 'logit'}. Default is 'square'
+    loss : string in {'square', 'logit'}
+        the selected loss function, this could be either 'square' or 'logit'
+        ('logit' not yet implemeted)
+    penalty : string in {'trace', 'l21', 'l21_lfro'}
+        the penalty to be used, this could be 'trace' for
+        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
+        'l21_lfro' for multi-task elastic-net.
     tol : float
         stopping rule tolerance. Default is 1e-5.
     max_iter : int
@@ -198,11 +210,11 @@ def accelerated_trace_norm_minimization(data, labels, tau, Wstart=None,
     # Start iterative method
     for k in range(max_iter):
         # Compute proximal gradient step
-        Wk = tools.trace_norm_prox(Zk - gamma * grad(data, labels, Zk),
-                                   alpha=tau*gamma)
+        Wk = tools.l21_norm_prox(Zk - gamma * grad(data, labels, Zk),
+                                 alpha=tau*gamma)
 
         # Compute the value of the objective function
-        obj_next = tools.objective_function(data, labels, Wk, loss)
+        obj_next = tools.objective_function(data, labels, Wk, loss, penalty)
 
         # Check stopping criterion
         # if np.abs((objk - obj_next) / objk) <= tol:

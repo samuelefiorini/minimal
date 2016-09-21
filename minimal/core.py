@@ -16,9 +16,10 @@ from __future__ import division
 import sys
 import multiprocessing as mp
 import numpy as np
-from minimal.algorithms import trace_norm_path
 from minimal.algorithms import trace_norm_minimization
 from minimal.algorithms import accelerated_trace_norm_minimization
+from minimal.algorithms21 import l21_norm_minimization
+from minimal.algorithms21 import accelerated_l21_norm_minimization
 from minimal import tools
 
 # Legacy import
@@ -28,14 +29,73 @@ except:
     from sklearn.cross_validation import KFold
 
 
-def kf_worker(minimizer, X_tr, Y_tr, tau_range, tr_idx, vld_idx, i, results):
+def get_minimizer(algorithm='FISTA', penalty='trace'):
+    """Return the minimizer of choice.
+
+    Parameters
+    ----------
+    algorithm : string in {'ISTA', 'FISTA'}
+        the minimization algorithm of choice, this could be either
+        'ISTA' (default) or 'FISTA'
+    penalty : string in {'trace', 'l21', 'l21_lfro'}
+        the penalty to be used, this could be 'trace' for
+        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
+        'l21_lfro' for multi-task elastic-net.
+
+    Returns
+    -------
+    minimizer : callable
+        the selected minimizer
+    bound : callable
+        the selected function to evaluate the max tau
+    """
+    if penalty.lower() == 'trace':
+        bound = tools.trace_norm_bound
+
+        # Check minimization algorithm
+        if algorithm.lower() == 'ista':
+            minimizer = trace_norm_minimization
+        elif algorithm.lower() == 'fista':
+            minimizer = accelerated_trace_norm_minimization
+        else:
+            print("Minimization strategy {} not understood, "
+                  "it must be 'ISTA' or 'FISTA'.".format(algorithm))
+            sys.exit(-1)
+
+    elif penalty.lower() == 'l21':
+        bound = tools.l21_norm_bound
+
+        # Check minimization algorithm
+        if algorithm.lower() == 'ista':
+            minimizer = l21_norm_minimization
+        elif algorithm.lower() == 'fista':
+            minimizer = accelerated_l21_norm_minimization
+        else:
+            print("Minimization strategy {} not understood, "
+                  "it must be 'ISTA' or 'FISTA'.".format(algorithm))
+            sys.exit(-1)
+
+    elif penalty.lower() == 'l21_lfro':
+        print("Multi-task Elastic-net not yet implemented.")
+        sys.exit(-1)
+    else:
+        print("Penalty {} not understood, "
+              "it must be in ['trace', 'l21', 'l21_lfro'].".format(penalty))
+        sys.exit(-1)
+
+    return minimizer, bound
+
+
+def kf_worker(minimizer, X_tr, Y_tr, tau_range, loss, penalty,
+              tr_idx, vld_idx, i, results):
     """Worker for parallel KFold implementation."""
-    Ws, _, _ = trace_norm_path(minimizer, X_tr, Y_tr,
-                               tau_range, loss='square')
+    Ws, _, _ = tools.regularization_path(minimizer, X_tr, Y_tr,
+                                         tau_range, loss, penalty)
     results[i] = {'W': Ws, 'tr_idx': tr_idx, 'vld_idx': vld_idx}
 
 
-def model_selection(data, labels, tau_range, algorithm='FISTA', cv_split=5):
+def model_selection(data, labels, tau_range, algorithm='FISTA', loss='square',
+                    penalty='trace', cv_split=5):
     """Select the best tau in the range and return the best model.
 
     Parameters
@@ -49,6 +109,13 @@ def model_selection(data, labels, tau_range, algorithm='FISTA', cv_split=5):
     algorithm : string in {'ISTA', 'FISTA'}
         the minimization algorithm of choice, this could be either
         'ISTA' (default) or 'FISTA'
+    loss : string in {'square', 'logit'}
+        the selected loss function, this could be either 'square' or 'logit'
+        ('logit' not yet implemeted)
+    penalty : string in {'trace', 'l21', 'l21_lfro'}
+        the penalty to be used, this could be 'trace' for
+        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
+        'l21_lfro' for multi-task elastic-net.
     cv_split : int (optional, default=5)
         the number of K-fold cross-validation split used to perform parameter
         selection
@@ -68,21 +135,14 @@ def model_selection(data, labels, tau_range, algorithm='FISTA', cv_split=5):
             W_hat
                 the estimated wheights matrix (model)
     """
-    # Check minimization algorithm
-    if algorithm == 'ISTA':
-        minimizer = trace_norm_minimization
-    elif algorithm == 'FISTA':
-        minimizer = accelerated_trace_norm_minimization
-    else:
-        print("Minimization strategy {} not understood,"
-              "it must be ISTA or FISTA.")
-        sys.exit(-1)
+    # Check minimization algorithm and penalty
+    minimizer, bound = get_minimizer(algorithm, penalty)
 
     # Problem size
     n, d = data.shape
 
     # Get the maximum tau value
-    max_tau = tools.trace_norm_bound(data, labels)
+    max_tau = bound(data, labels)
     scaled_tau_range = tau_range * max_tau
 
     # Kfold starts here
@@ -98,8 +158,8 @@ def model_selection(data, labels, tau_range, algorithm='FISTA', cv_split=5):
         Y_vld = labels[vld_idx, :]
 
         p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
-                                               Y_tr, tau_range * max_tau,
-                                               tr_idx, vld_idx,
+                                               Y_tr, tau_range * max_tau, loss,
+                                               penalty, tr_idx, vld_idx,
                                                i, results))
         jobs.append(p)
         p.start()

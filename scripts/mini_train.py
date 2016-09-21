@@ -32,6 +32,8 @@ def main(config_file):
     labels = config.Y  # (d, T) labels matrix
     tau_range = config.tau_range
     minimization = config.minimization_algorithm
+    penalty = config.penalty
+    loss = config.loss
     cv_split = config.cross_validation_split
 
     print("-------------- Minimal training --------------")
@@ -44,6 +46,8 @@ def main(config_file):
     out = mini.core.model_selection(data=data, labels=labels,
                                     tau_range=tau_range,
                                     algorithm=minimization,
+                                    loss=loss,
+                                    penalty=penalty,
                                     cv_split=cv_split)
     # Initialize output folder
     root = config.output_root_folder
