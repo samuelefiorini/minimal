@@ -87,14 +87,15 @@ def get_minimizer(algorithm='FISTA', penalty='trace'):
     return minimizer, bound
 
 
-def kf_worker(minimizer, X_tr, Y_tr, tau_range, tr_idx, vld_idx, i, results):
+def kf_worker(minimizer, X_tr, Y_tr, tau_range, loss, tr_idx, vld_idx, i,
+              results):
     """Worker for parallel KFold implementation."""
     Ws, _, _ = regularization_path(minimizer, X_tr, Y_tr,
-                                   tau_range, loss='square')
+                                   tau_range, loss)
     results[i] = {'W': Ws, 'tr_idx': tr_idx, 'vld_idx': vld_idx}
 
 
-def model_selection(data, labels, tau_range, algorithm='FISTA',
+def model_selection(data, labels, tau_range, algorithm='FISTA', loss='square',
                     penalty='trace', cv_split=5):
     """Select the best tau in the range and return the best model.
 
@@ -109,6 +110,9 @@ def model_selection(data, labels, tau_range, algorithm='FISTA',
     algorithm : string in {'ISTA', 'FISTA'}
         the minimization algorithm of choice, this could be either
         'ISTA' (default) or 'FISTA'
+    loss : string in {'square', 'logit'}
+        the selected loss function, this could be either 'square' or 'logit'
+        ('logit' not yet implemeted)
     penalty : string in {'trace', 'l21', 'l21_lfro'}
         the penalty to be used, this could be 'trace' for
         nuclear-norm-penalized problems, 'l21' for multi-task lasso and
@@ -155,7 +159,7 @@ def model_selection(data, labels, tau_range, algorithm='FISTA',
         Y_vld = labels[vld_idx, :]
 
         p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
-                                               Y_tr, tau_range * max_tau,
+                                               Y_tr, tau_range * max_tau, loss,
                                                tr_idx, vld_idx,
                                                i, results))
         jobs.append(p)

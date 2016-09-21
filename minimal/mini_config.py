@@ -29,6 +29,8 @@ X, Y, feat_names, index = data_source.load('custom',
 
 # ---------------------------- EXPERIMENT SETTING -------------------- #
 minimization_algorithm = 'FISTA'  # in ['ISTA', 'FISTA']
+penalty = 'L21'  # in ['ISTA', 'FISTA']
+loss = 'square'
 cross_validation_split = 5  # number of Kfold CV split for param. selection
 tau_range = np.logspace(-3, 0, 20)  # scaling factors for TAU_MAX
 
