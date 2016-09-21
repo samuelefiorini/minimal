@@ -11,6 +11,7 @@ This module contains the utility functions for the actual algorithms.
 # FreeBSD License
 ######################################################################
 
+from __future__ import division
 import sys
 import numpy as np
 
@@ -272,32 +273,38 @@ def l21_norm_prox(W, alpha):
     d, T = W.shape
 
     # Compute the soft-thresholding operator for each row of an unitary matrix
-    ones = np.ones(d)
+    ones = np.ones(T)
     Wst = np.empty_like(W)
     for i, Wi in enumerate(W):
-        Wst[i, :] = soft_thresholding(ones, alpha / np.dot(Wi.T, Wi))
+        Wst[i, :] = soft_thresholding(ones, alpha / np.sqrt(Wi.T.dot(Wi)))
 
     # Return the Hadamard-product between Wst and W
     return W * Wst
 
 
 def regularization_path(minimization_algorithm, data, labels, tau_range,
-                    loss='square', **kwargs):
+                        loss='square', penalty='trace', **kwargs):
     """Solution of a trace-norm penalized VVR with warm restart.
 
     Parameters
     ----------
     minimization_algorithm : callable
         the algorithm of choice
-        e.g.: trace_norm_minimization or accelerated_trace_norm_minimization
-    loss : string
-        the selected loss function in {'square', 'logit'}
+        e.g.: trace_norm_minimization, accelerated_trace_norm_minimization
+        l21_norm_minimization or accelerated_l21_norm_minimization
     data : (n, d) float ndarray
         training data matrix
     labels : (n, T) float ndarray
         training labels matrix
     tau_range : (n_tau, ) float ndarray
         range of regularization parameters
+    loss : string in {'square', 'logit'}
+        the selected loss function, this could be either 'square' or 'logit'
+        ('logit' not yet implemeted)
+    penalty : string in {'trace', 'l21', 'l21_lfro'}
+        the penalty to be used, this could be 'trace' for
+        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
+        'l21_lfro' for multi-task elastic-net.
     **kwargs : dictionary of keyword-only arguments
         the input list of arguments fed to the minization algorithm of choice
 
@@ -321,7 +328,8 @@ def regularization_path(minimization_algorithm, data, labels, tau_range,
     # Evaluate the tau grid
     for tau in tau_range:
         W, obj, k = minimization_algorithm(data, labels, tau, Wstart,
-                                           loss, return_iter=True, **kwargs)
+                                           loss, penalty, return_iter=True,
+                                           **kwargs)
         W_list.append(W)
         obj_list.append(obj)
         iter_list.append(k)

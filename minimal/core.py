@@ -86,11 +86,11 @@ def get_minimizer(algorithm='FISTA', penalty='trace'):
     return minimizer, bound
 
 
-def kf_worker(minimizer, X_tr, Y_tr, tau_range, loss, tr_idx, vld_idx, i,
-              results):
+def kf_worker(minimizer, X_tr, Y_tr, tau_range, loss, penalty,
+              tr_idx, vld_idx, i, results):
     """Worker for parallel KFold implementation."""
     Ws, _, _ = tools.regularization_path(minimizer, X_tr, Y_tr,
-                                         tau_range, loss)
+                                         tau_range, loss, penalty)
     results[i] = {'W': Ws, 'tr_idx': tr_idx, 'vld_idx': vld_idx}
 
 
@@ -157,16 +157,19 @@ def model_selection(data, labels, tau_range, algorithm='FISTA', loss='square',
         X_vld = data[vld_idx, :]
         Y_vld = labels[vld_idx, :]
 
-        p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
-                                               Y_tr, tau_range * max_tau, loss,
-                                               tr_idx, vld_idx,
-                                               i, results))
-        jobs.append(p)
-        p.start()
+        kf_worker(minimizer, X_tr, Y_tr, tau_range * max_tau, loss,
+                  penalty, tr_idx, vld_idx, i, results)
 
-    # Collect the results
-    for p in jobs:
-        p.join()
+    #     p = mp.Process(target=kf_worker, args=(minimizer, X_tr,
+    #                                            Y_tr, tau_range * max_tau, loss,
+    #                                            penalty, tr_idx, vld_idx,
+    #                                            i, results))
+    #     jobs.append(p)
+    #     p.start()
+    #
+    # # Collect the results
+    # for p in jobs:
+    #     p.join()
 
     # Evaluate the errors
     tr_errors = np.zeros((cv_split, len(tau_range)))
