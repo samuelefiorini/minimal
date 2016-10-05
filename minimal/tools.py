@@ -279,7 +279,6 @@ def l21_norm_prox(W, alpha):
     for i, Wi in enumerate(W):
         thresh = alpha / np.sqrt(Wi.T.dot(Wi))
         Wst[i, :] = soft_thresholding(ones, thresh)
-        print(soft_thresholding(ones, thresh))
 
     # Return the Hadamard-product between Wst and W
     return W * Wst
