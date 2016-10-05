@@ -39,6 +39,8 @@ def main(config_file):
     print("-------------- Minimal training --------------")
     print("* Data matrix:\t\t   {} x {}".format(*data.shape))
     print("* Labels matrix:\t   {} x {}".format(*labels.shape))
+    print("* Loss function:\t   {}".format(loss))
+    print("* Regularization penalty:  {}".format(penalty))
     print("* Minimization algorithm:  {}".format(minimization))
     print("* Number of tau:\t   {}".format(len(tau_range)))
     print("* Cross-validation splits: {}".format(cv_split))
