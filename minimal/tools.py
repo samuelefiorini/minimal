@@ -121,7 +121,7 @@ def soft_thresholding(w, alpha):
     wt : (d,) or (d, 1) ndarray
         soft-thresholded vector
     """
-    return np.sign(w) * np.clip(np.abs(w) - alpha, 0, np.inf)
+    return np.sign(w) * np.clip(np.abs(w) - alpha, 0.0, np.inf)
 
 
 def trace_norm_bound(X, Y, loss='square'):
@@ -212,7 +212,8 @@ def objective_function(data, labels, W, loss='square', penalty='trace'):
         penaltyfun = lambda x: np.linalg.norm(x, ord='nuc')
     elif penalty.lower() == 'l21':
         # L21 is the sum of the Euclidean norms of of the columns of the matrix
-        penaltyfun = lambda W: sum(map(lambda w: np.linalg.norm(w, ord=2), W.T))
+        # penaltyfun = lambda W: sum(map(lambda w: np.linalg.norm(w, ord=2), W.T))
+        penaltyfun = lambda W: sum(map(lambda w: np.linalg.norm(w, ord=2), W))
     else:
         print('Only trace and l2,1 norms implemeted so far.')
         sys.exit(-1)
@@ -274,9 +275,11 @@ def l21_norm_prox(W, alpha):
 
     # Compute the soft-thresholding operator for each row of an unitary matrix
     ones = np.ones(T)
-    Wst = np.empty_like(W)
+    Wst = np.empty(W.shape)
     for i, Wi in enumerate(W):
-        Wst[i, :] = soft_thresholding(ones, alpha / np.sqrt(Wi.T.dot(Wi)))
+        thresh = alpha / np.sqrt(Wi.T.dot(Wi))
+        Wst[i, :] = soft_thresholding(ones, thresh)
+        print(soft_thresholding(ones, thresh))
 
     # Return the Hadamard-product between Wst and W
     return W * Wst
