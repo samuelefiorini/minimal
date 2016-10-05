@@ -211,8 +211,7 @@ def objective_function(data, labels, W, loss='square', penalty='trace'):
     if penalty.lower() == 'trace':
         penaltyfun = lambda x: np.linalg.norm(x, ord='nuc')
     elif penalty.lower() == 'l21':
-        # L21 is the sum of the Euclidean norms of of the columns of the matrix
-        # penaltyfun = lambda W: sum(map(lambda w: np.linalg.norm(w, ord=2), W.T))
+        # L21 is the sum of the Euclidean norms of of the rows of the matrix
         penaltyfun = lambda W: sum(map(lambda w: np.linalg.norm(w, ord=2), W))
     else:
         print('Only trace and l2,1 norms implemeted so far.')
