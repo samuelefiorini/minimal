@@ -152,7 +152,7 @@ def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
         W_next = prox(Wk - gamma * grad(data, labels, Wk), alpha=tau*gamma)
 
         # Compute the value of the objective function
-        obj_next = tools.objective_function(data, labels, W_next, loss)
+        obj_next = tools.objective_function(data, labels, W_next, loss, penalty)
 
         # Check stopping criterion
         if np.abs((objk - obj_next) / objk) <= tol:
@@ -260,7 +260,7 @@ def FISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
         Wk = prox(Zk - gamma * grad(data, labels, Zk), alpha=tau*gamma)
 
         # Compute the value of the objective function
-        obj_next = tools.objective_function(data, labels, Wk, loss)
+        obj_next = tools.objective_function(data, labels, Wk, loss, penalty)
 
         # Check stopping criterion
         # if np.abs((objk - obj_next) / objk) <= tol:
