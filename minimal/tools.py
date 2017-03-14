@@ -13,12 +13,13 @@ This module contains the utility functions for the actual algorithms.
 
 from __future__ import division
 
-import sys
 import numpy as np
 
 from minimal.loss_functions import __losses__
 from minimal.loss_functions import square_loss, logit_loss
 from minimal.penalties import __penalties__
+from minimal.penalties import trace, l21, group_lasso
+from functools import partial
 
 __all__ = ['squared', 'get_lipschitz', 'objective_function']
 
@@ -68,7 +69,7 @@ def get_lipschitz(data, loss):
         raise NotImplementedError('loss must be in {} '.format(__losses__))
 
 
-def objective_function(data, labels, W, loss, penalty):
+def objective_function(data, labels, W, loss, tau, penalty, groups=None):
     """Evaluate the objective function at a given point.
 
     This function evaluates the objective function loss(Y, XW) + tau ||W||_*.
@@ -86,6 +87,11 @@ def objective_function(data, labels, W, loss, penalty):
         the penalty to be used, this could be 'trace' for
         nuclear-norm-penalized problems, 'l21' for mixed-norm and 'group-lasso'
         or 'gl' for group lasso
+    groups : list of lists (used only for group-lasso)
+        the outer list represents the groups and the
+        inner lists represent the variables in the groups. E.g. [[1, 2],
+        [2, 3]] contains two groups ([1, 2] and [2, 3]) with variable 1 and
+        2 in the first group and variables 2 and 3 in the second group.
 
     Returns
     ----------
@@ -95,20 +101,22 @@ def objective_function(data, labels, W, loss, penalty):
     # Check loss
     if loss.lower() == 'square':
         lossfun = square_loss
-    elif loss.lower() in ['logit', 'logistic']:
+    elif loss.lower() in ('logit', 'logistic'):
         lossfun = logit_loss
 
     # Check penalty
     if penalty.lower() == 'trace':
-        penaltyfun = lambda x: np.linalg.norm(x, ord='nuc')
+        penaltyfun = trace
     elif penalty.lower() == 'l21':
         # L21 is the sum of the Euclidean norms of of the rows of the matrix
-        penaltyfun = lambda W: sum(map(lambda w: np.linalg.norm(w, ord=2), W))
+        penaltyfun = l21
+    elif penalty.lower() in ('group-lasso', 'gl'):
+        penaltyfun = partial(group_lasso, groups=groups)
     else:
         raise NotImplementedError('loss must be in {} and  penalty '
                                   'in {}'.format(__losses__, __penalties__))
 
-    return lossfun(data, labels, W) + penaltyfun(W)
+    return lossfun(data, labels, W) + tau * penaltyfun(W)
 
 
 def regularization_path(minimization_algorithm, data, labels, tau_range,

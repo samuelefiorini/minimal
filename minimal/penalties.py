@@ -10,8 +10,8 @@
 
 import numpy as np
 
-from six.moves import map
 from minimal.loss_functions import __losses__
+from six.moves import map
 
 __penalties__ = ('trace', 'l21', 'group-lasso', 'gl')
 
@@ -86,6 +86,21 @@ def group_lasso_norm_bound(X, Y, loss='square'):
         maximum value for the l21-norm regularization parameter
     """
     raise NotImplementedError('TODO')
+
+
+def trace(X):
+    """Compute the trace-norm on the input matrix."""
+    return np.linalg.norm(X, ord='nuc')
+
+
+def l21(X):
+    """Compute the L21 norm on the input matrix."""
+    return sum(map(lambda x: np.linalg.norm(x, ord=2), X))
+
+
+def group_lasso(x, groups):
+    """Compute the group-lasso penalty on the input array with the given groups."""
+    return np.linalg.norm([x[g].dot(x[g]) for g in groups])
 
 
 def soft_thresholding(w, alpha):
