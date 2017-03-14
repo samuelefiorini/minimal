@@ -68,7 +68,7 @@ def get_lipschitz(data, loss):
         raise NotImplementedError('loss must be in {} '.format(__losses__))
 
 
-def objective_function(data, labels, W, loss='square', penalty='trace'):
+def objective_function(data, labels, W, loss, penalty):
     """Evaluate the objective function at a given point.
 
     This function evaluates the objective function loss(Y, XW) + tau ||W||_*.
@@ -84,8 +84,8 @@ def objective_function(data, labels, W, loss='square', penalty='trace'):
         ('logit' not yet implemeted)
     penalty : string in {'trace', 'l21', 'l21_lfro'}
         the penalty to be used, this could be 'trace' for
-        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
-        'l21_lfro' for multi-task elastic-net.
+        nuclear-norm-penalized problems, 'l21' for mixed-norm and 'group-lasso'
+        or 'gl' for group lasso
 
     Returns
     ----------
