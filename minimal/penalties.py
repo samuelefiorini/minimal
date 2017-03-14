@@ -121,6 +121,16 @@ def soft_thresholding(w, alpha):
     return np.sign(w) * np.clip(np.abs(w) - alpha, 0.0, np.inf)
 
 
+def euclidean_norm_prox(x, alpha):
+    """Compute the proximal mapping for the Euclidean norm."""
+    return np.max((1 - alpha/np.linalg.norm(x, ord=2), 0)) * x
+
+
+def block_soft_thresholding(x, groups):
+    # TODO
+    pass
+
+
 def trace_norm_prox(W, alpha):
     """Compute trace norm proximal operator on W.
 
