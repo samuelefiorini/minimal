@@ -57,7 +57,7 @@ def get_minimizer(algorithm='fista', loss='square', penalty='trace'):
         bound = trace_norm_bound
     elif penalty.lower() == 'l21':
         bound = l21_norm_bound
-    elif penalty.lower() == 'l21':
+    elif penalty.lower() in ('group-lasso', 'gl'):
         bound = group_lasso_norm_bound
     else:
         raise NotImplementedError('penalty must be in {} '.format(__penalties__))
