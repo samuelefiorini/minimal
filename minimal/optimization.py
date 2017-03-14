@@ -24,6 +24,7 @@ on machine learning. ACM, 2009.
 import numpy as np
 
 from collections import deque
+from functools import partial
 from minimal import tools
 from minimal.loss_functions import __losses__
 from minimal.loss_functions import square_loss_grad, logit_loss_grad
@@ -31,7 +32,36 @@ from minimal.penalties import (trace_norm_prox, l21_norm_prox,
                                block_soft_thresholding)
 from minimal.penalties import __penalties__
 
-__all__ = ('ISTA', 'FISTA')
+__all__ = ('ISTA', 'FISTA', 'get_prox')
+
+
+def get_prox(penalty='trace', groups=None):
+    """Get the proximal mapping function corresponding to the penalty.
+
+    Parameters
+    ----------
+    penalty : string
+        the selected penalty function in {'l21', 'trace', 'group-lasso'};
+        default is 'trace'.
+    groups : array-like (used only for group-lasso)
+        [[1,2,3], [4,5,6], ...]
+
+    Returns
+    -------
+    prox : function
+        the corresponding proximal mapping
+    """
+    # Load the penalty
+    if penalty.lower() == 'trace':
+        prox = trace_norm_prox
+    elif penalty.lower() == 'l21':
+        prox = l21_norm_prox
+    elif penalty.lower() in ('group-lasso', 'gl'):
+        prox = partial(block_soft_thresholding, groups=groups)
+    else:
+        raise NotImplementedError('penalty must be '
+                                  'in {}.'.format(__penalties__))
+    return prox
 
 
 def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
