@@ -17,8 +17,10 @@ import sys
 import numpy as np
 from collections import deque
 from . import tools
+from sklearn.utils import deprecated
 
 
+@deprecated('Use minimal.optimization.ISTA() instead.')
 def l21_norm_minimization(data, labels, tau, Wstart=None,
                           loss='square', penalty='trace',
                           tol=1e-5, max_iter=50000,
@@ -116,6 +118,7 @@ def l21_norm_minimization(data, labels, tau, Wstart=None,
         return Wk, obj_list[-1]
 
 
+@deprecated('Use minimal.optimization.FISTA() instead.')
 def accelerated_l21_norm_minimization(data, labels, tau, Wstart=None,
                                       loss='square', penalty='trace', tol=1e-5,
                                       max_iter=50000,

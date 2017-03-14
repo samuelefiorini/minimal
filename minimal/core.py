@@ -13,34 +13,33 @@ parameter (model) selection and assessment.
 ######################################################################
 
 from __future__ import division
-import sys
+
 import multiprocessing as mp
 import numpy as np
-from minimal.algorithms import trace_norm_minimization
-from minimal.algorithms import accelerated_trace_norm_minimization
-from minimal.algorithms21 import l21_norm_minimization
-from minimal.algorithms21 import accelerated_l21_norm_minimization
+
+from minimal.loss_functions import __losses__
+from minimal.optimization import ISTA, FISTA
+from minimal.penalties import __penalties__
+from minimal.penalties import (trace_norm_bound, l21_norm_bound,
+                               group_lasso_norm_bound)
 from minimal import tools
-
-# Legacy import
-try:
-    from sklearn.model_selection import KFold
-except:
-    from sklearn.cross_validation import KFold
+from sklearn.model_selection import KFold
 
 
-def get_minimizer(algorithm='FISTA', penalty='trace'):
+def get_minimizer(algorithm='fista', loss='square', penalty='trace'):
     """Return the minimizer of choice.
 
     Parameters
     ----------
-    algorithm : string in {'ISTA', 'FISTA'}
+    algorithm : string in {'ista', 'fista'}
         the minimization algorithm of choice, this could be either
-        'ISTA' (default) or 'FISTA'
-    penalty : string in {'trace', 'l21', 'l21_lfro'}
+        'ISTA' or 'FISTA' (default)
+    loss : string
+        the selected loss function in {'square', 'logit'}; default is 'square'.
+    penalty : string in {'trace', 'l21', 'l21', 'group-lasso'}
         the penalty to be used, this could be 'trace' for
-        nuclear-norm-penalized problems, 'l21' for multi-task lasso and
-        'l21_lfro' for multi-task elastic-net.
+        nuclear-norm-penalized problems, 'l21' for multi-task lasso
+        and 'group-lasso' (or 'gl') for group lasso.
 
     Returns
     -------
@@ -49,39 +48,28 @@ def get_minimizer(algorithm='FISTA', penalty='trace'):
     bound : callable
         the selected function to evaluate the max tau
     """
+    # Check loss
+    if loss.lower() not in __losses__:
+        raise NotImplementedError('loss must be in {} '.format(__losses__))
+
+    # Check penalty
     if penalty.lower() == 'trace':
-        bound = tools.trace_norm_bound
-
-        # Check minimization algorithm
-        if algorithm.lower() == 'ista':
-            minimizer = trace_norm_minimization
-        elif algorithm.lower() == 'fista':
-            minimizer = accelerated_trace_norm_minimization
-        else:
-            print("Minimization strategy {} not understood, "
-                  "it must be 'ISTA' or 'FISTA'.".format(algorithm))
-            sys.exit(-1)
-
+        bound = trace_norm_bound
     elif penalty.lower() == 'l21':
-        bound = tools.l21_norm_bound
-
-        # Check minimization algorithm
-        if algorithm.lower() == 'ista':
-            minimizer = l21_norm_minimization
-        elif algorithm.lower() == 'fista':
-            minimizer = accelerated_l21_norm_minimization
-        else:
-            print("Minimization strategy {} not understood, "
-                  "it must be 'ISTA' or 'FISTA'.".format(algorithm))
-            sys.exit(-1)
-
-    elif penalty.lower() == 'l21_lfro':
-        print("Multi-task Elastic-net not yet implemented.")
-        sys.exit(-1)
+        bound = l21_norm_bound
+    elif penalty.lower() == 'l21':
+        bound = group_lasso_norm_bound
     else:
-        print("Penalty {} not understood, "
-              "it must be in ['trace', 'l21', 'l21_lfro'].".format(penalty))
-        sys.exit(-1)
+        raise NotImplementedError('penalty must be in {} '.format(__penalties__))
+
+    # Check minimization algorithm
+    if algorithm.lower() == 'ista':
+        minimizer = ISTA
+    elif algorithm.lower() == 'fista':
+        minimizer = FISTA
+    else:
+        raise NotImplementedError('Minimization algorithm must be '
+                                  'in {}'.format('ISTA', 'FISTA'))
 
     return minimizer, bound
 
@@ -136,7 +124,7 @@ def model_selection(data, labels, tau_range, algorithm='FISTA', loss='square',
                 the estimated wheights matrix (model)
     """
     # Check minimization algorithm and penalty
-    minimizer, bound = get_minimizer(algorithm, penalty)
+    minimizer, bound = get_minimizer(algorithm, loss, penalty)
 
     # Problem size
     n, d = data.shape
@@ -146,12 +134,12 @@ def model_selection(data, labels, tau_range, algorithm='FISTA', loss='square',
     scaled_tau_range = tau_range * max_tau
 
     # Kfold starts here
-    kf = KFold(n=n, n_folds=cv_split)
+    kf = KFold(n_splits=cv_split)
     jobs = []  # multiprocessing job list
     results = mp.Manager().dict()  # dictionary shared among processess
 
     # Submit each kfold job
-    for i, (tr_idx, vld_idx) in enumerate(kf):
+    for i, (tr_idx, vld_idx) in enumerate(kf.split(data)):
         X_tr = data[tr_idx, :]
         Y_tr = labels[tr_idx, :]
         X_vld = data[vld_idx, :]

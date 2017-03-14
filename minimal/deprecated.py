@@ -1,21 +1,65 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""The implemented penalties and their proximal mapping."""
+@deprecated('Use minimal.loss_functions.square_loss() instead.')
+def square_loss(X, Y, W):
+    """Compute the value of the square loss on W.
 
-######################################################################
-# Copyright (C) 2016 Samuele Fiorini, Annalisa Barla
-#
-# FreeBSD License
-######################################################################
+    Parameters
+    ----------
+    X : (n, d) float ndarray
+        data matrix
+    Y : (n, T) float ndarray
+        labels matrix
+    W : (d, T) float ndarray
+        weights
 
-import numpy as np
+    Returns
+    ----------
+    obj : float
+        The value of the objective function on W.
+    """
+    return 1.0 / X.shape[0] * np.linalg.norm(np.dot(X, W) - Y, ord='fro') ** 2
 
-from six.moves import map
-from minimal.loss_functions import __losses__
 
-__penalties__ = ('trace', 'l21', 'group-lasso', 'gl')
+@deprecated('Use minimal.loss_functions.square_loss() instead.')
+def square_loss_grad(X, Y, W):
+    """Compute the square loss gradient at W.
+
+    Parameters
+    ----------
+    X : (n, d) float ndarray
+        data matrix
+    Y : (n, T) float ndarray
+        labels matrix
+    W : (d, T) float ndarray
+        weights
+
+    Returns
+    ----------
+    G : (d, T) float ndarray
+        square loss gradient evaluated on the current iterate W.
+    """
+    return 2.0 / X.shape[0] * np.dot(X.T, (np.dot(X, W) - Y))
 
 
+@deprecated('Use minimal.penalties.soft_thresholding() instead.')
+def soft_thresholding(w, alpha):
+    """Compute the element-wise soft-thresholding operator on the vector w.
+
+    Parameters
+    ----------
+    w : (d,) or (d, 1) ndarray
+        input vector
+    alpha : float
+        threshold
+
+    Returns
+    ----------
+    wt : (d,) or (d, 1) ndarray
+        soft-thresholded vector
+    """
+    return np.sign(w) * np.clip(np.abs(w) - alpha, 0.0, np.inf)
+
+
+@deprecated('Use minimal.penalties.trace_norm_bound() instead.')
 def trace_norm_bound(X, Y, loss='square'):
     """Compute maximum value for the trace norm regularization parameter.
 
@@ -37,10 +81,11 @@ def trace_norm_bound(X, Y, loss='square'):
         # In this case max_tau := 2/n * max_sing_val(X^T * Y)
         return np.linalg.norm(np.dot(X.T, Y), ord=2) * (2.0/X.shape[0])
     else:
-        raise NotImplementedError('Loss function must be '
-                                  'in {}.'.format(__losses__))
+        print('Only square loss implemented so far.')
+        sys.exit(-1)
 
 
+@deprecated('Use minimal.penalties.l21_norm_bound() instead.')
 def l21_norm_bound(X, Y, loss='square'):
     """Compute maximum value for the l12-norm regularization parameter.
 
@@ -62,50 +107,13 @@ def l21_norm_bound(X, Y, loss='square'):
         # In this case max_tau := 2/n * max(||[X^T * Y]s||_2)
         # First compute the 2-norm of each row of X^T * Y
         norm2 = map(lambda x: np.linalg.norm(x, ord=2), X.T.dot(Y))
-        return max(norm2) * (2.0/X.shape[0])
+        return np.max(norm2) * (2.0/X.shape[0])
     else:
-        raise NotImplementedError('Loss function must be '
-                                  'in {}.'.format(__losses__))
+        print('Only square loss implemented so far.')
+        sys.exit(-1)
 
 
-def group_lasso_norm_bound(X, Y, loss='square'):
-    """Compute maximum value for the l12-norm regularization parameter.
-
-    Parameters
-    ----------
-    data : (n, d) float ndarray
-        data matrix
-    labels : (n, T) float ndarray
-        labels matrix
-    loss : string
-        the selected loss function in {'square', 'logit'}. Default is 'square'
-
-    Returns
-    ----------
-    max_tau : float
-        maximum value for the l21-norm regularization parameter
-    """
-    raise NotImplementedError('TODO')
-
-
-def soft_thresholding(w, alpha):
-    """Compute the element-wise soft-thresholding operator on the vector w.
-
-    Parameters
-    ----------
-    w : (d,) or (d, 1) ndarray
-        input vector
-    alpha : float
-        threshold
-
-    Returns
-    ----------
-    wt : (d,) or (d, 1) ndarray
-        soft-thresholded vector
-    """
-    return np.sign(w) * np.clip(np.abs(w) - alpha, 0.0, np.inf)
-
-
+@deprecated('Use minimal.penalties.trace_norm_prox() instead.')
 def trace_norm_prox(W, alpha):
     """Compute trace norm proximal operator on W.
 
@@ -138,6 +146,7 @@ def trace_norm_prox(W, alpha):
     return np.dot(U, np.dot(st_S, V))
 
 
+@deprecated('Use minimal.penalties.l21_norm_prox() instead.')
 def l21_norm_prox(W, alpha):
     """Compute l2,1-norm proximal operator on W.
 
@@ -167,21 +176,3 @@ def l21_norm_prox(W, alpha):
 
     # Return the Hadamard-product between Wst and W
     return W * Wst
-
-
-def block_soft_thresholding(w, alpha):
-    """Compute the block-wise soft-thresholding operator on the vector w.
-
-    Parameters
-    ----------
-    w : (d,) or (d, 1) ndarray
-    input vector
-    alpha : float
-    threshold
-
-    Returns
-    ----------
-    wt : (d,) or (d, 1) ndarray
-    soft-thresholded vector
-    """
-    return np.sign(w) * np.clip(np.abs(w) - alpha, 0.0, np.inf)
