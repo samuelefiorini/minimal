@@ -15,16 +15,18 @@ elaboration of the data.
 from __future__ import division
 import sys
 import numpy as np
+from sklearn.utils import deprecated
 from collections import deque
 from . import tools
 
 
+@deprecated('Use minimal.optimization.ISTA()')
 def trace_norm_minimization(data, labels, tau, Wstart=None,
                             loss='square', tol=1e-5, max_iter=50000,
                             return_iter=False):
     """Solution of trace-norm penalized vector-valued regression problems.
 
-    Comput the solution of the learning problem
+    Compute the solution of the learning problem
 
                 min loss(Y, XW) + tau ||W||_*
                  W
@@ -109,6 +111,7 @@ def trace_norm_minimization(data, labels, tau, Wstart=None,
         return Wk, obj_list[-1]
 
 
+@deprecated('Use minimal.optimization.FISTA()')
 def accelerated_trace_norm_minimization(data, labels, tau, Wstart=None,
                                         loss='square', tol=1e-5,
                                         max_iter=50000,
