@@ -12,8 +12,13 @@ This module contains the utility functions for the actual algorithms.
 ######################################################################
 
 from __future__ import division
+
 import sys
 import numpy as np
+
+from minimal.loss_functions import __losses__
+from minimal.penalties import __penalties__
+from sklearn.utils import deprecated
 
 __all__ = ['square_loss', 'square_loss_grad', 'get_lipschitz',
            'soft_thresholding', 'trace_norm_bound',
@@ -43,6 +48,7 @@ def squared(X):
         return X.T.dot(X)
 
 
+@deprecated('Use minimal.loss_functions.square_loss() instead.')
 def square_loss(X, Y, W):
     """Compute the value of the square loss on W.
 
@@ -63,6 +69,7 @@ def square_loss(X, Y, W):
     return 1.0 / X.shape[0] * np.linalg.norm(np.dot(X, W) - Y, ord='fro') ** 2
 
 
+@deprecated('Use minimal.loss_functions.square_loss() instead.')
 def square_loss_grad(X, Y, W):
     """Compute the square loss gradient at W.
 
@@ -102,10 +109,10 @@ def get_lipschitz(data, loss):
         # compute the largest singular value
         return np.linalg.norm(squared(data), ord=2)
     else:
-        print('Only square loss implemented.')
-        sys.exit(-1)
+        raise NotImplementedError('loss must be in {} '.format(__losses__))
 
 
+@deprecated('Use minimal.penalties.soft_thresholding() instead.')
 def soft_thresholding(w, alpha):
     """Compute the element-wise soft-thresholding operator on the vector w.
 
@@ -124,6 +131,7 @@ def soft_thresholding(w, alpha):
     return np.sign(w) * np.clip(np.abs(w) - alpha, 0.0, np.inf)
 
 
+@deprecated('Use minimal.penalties.trace_norm_bound() instead.')
 def trace_norm_bound(X, Y, loss='square'):
     """Compute maximum value for the trace norm regularization parameter.
 
@@ -149,6 +157,7 @@ def trace_norm_bound(X, Y, loss='square'):
         sys.exit(-1)
 
 
+@deprecated('Use minimal.penalties.l21_norm_bound() instead.')
 def l21_norm_bound(X, Y, loss='square'):
     """Compute maximum value for the l12-norm regularization parameter.
 
@@ -214,12 +223,13 @@ def objective_function(data, labels, W, loss='square', penalty='trace'):
         # L21 is the sum of the Euclidean norms of of the rows of the matrix
         penaltyfun = lambda W: sum(map(lambda w: np.linalg.norm(w, ord=2), W))
     else:
-        print('Only trace and l2,1 norms implemeted so far.')
-        sys.exit(-1)
+        raise NotImplementedError('loss must be in {} and  penalty '
+                                  'in {}'.format(__losses__, __penalties__))
 
     return lossfun(data, labels, W) + penaltyfun(W)
 
 
+@deprecated('Use minimal.penalties.trace_norm_prox() instead.')
 def trace_norm_prox(W, alpha):
     """Compute trace norm proximal operator on W.
 
@@ -252,6 +262,7 @@ def trace_norm_prox(W, alpha):
     return np.dot(U, np.dot(st_S, V))
 
 
+@deprecated('Use minimal.penalties.l21_norm_prox() instead.')
 def l21_norm_prox(W, alpha):
     """Compute l2,1-norm proximal operator on W.
 
@@ -285,7 +296,7 @@ def l21_norm_prox(W, alpha):
 
 def regularization_path(minimization_algorithm, data, labels, tau_range,
                         loss='square', penalty='trace', **kwargs):
-    """Solution of a trace-norm penalized VVR with warm restart.
+    """Solution of a penalized VVR problem with warm restart.
 
     Parameters
     ----------

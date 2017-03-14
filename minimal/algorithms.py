@@ -20,7 +20,7 @@ from collections import deque
 from . import tools
 
 
-@deprecated('Use minimal.optimization.ISTA()')
+@deprecated('Use minimal.optimization.ISTA() instead.')
 def trace_norm_minimization(data, labels, tau, Wstart=None,
                             loss='square', tol=1e-5, max_iter=50000,
                             return_iter=False):
@@ -111,7 +111,7 @@ def trace_norm_minimization(data, labels, tau, Wstart=None,
         return Wk, obj_list[-1]
 
 
-@deprecated('Use minimal.optimization.FISTA()')
+@deprecated('Use minimal.optimization.FISTA() instead.')
 def accelerated_trace_norm_minimization(data, labels, tau, Wstart=None,
                                         loss='square', tol=1e-5,
                                         max_iter=50000,
