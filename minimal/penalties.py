@@ -126,9 +126,9 @@ def euclidean_norm_prox(x, alpha):
     return np.max((1 - alpha/np.linalg.norm(x, ord=2), 0)) * x
 
 
-def block_soft_thresholding(x, groups):
-    # TODO
-    pass
+def block_soft_thresholding(x, alpha, groups=None):
+    """Compute the proximal mapping for the group-lasso penalty."""
+    return np.hstack([euclidean_norm_prox(x[g], alpha) for g in groups])
 
 
 def trace_norm_prox(W, alpha):
