@@ -33,6 +33,7 @@ from minimal.penalties import (trace_norm_prox, l21_norm_prox,
 from minimal.penalties import __penalties__
 
 __all__ = ('ISTA', 'FISTA', 'get_prox')
+__algorithms__ = ('ISTA', 'FISTA')
 
 
 def get_prox(penalty='trace', groups=None):
@@ -43,8 +44,11 @@ def get_prox(penalty='trace', groups=None):
     penalty : string
         the selected penalty function in {'l21', 'trace', 'group-lasso'};
         default is 'trace'.
-    groups : array-like (used only for group-lasso)
-        [[1,2,3], [4,5,6], ...]
+    groups : list of lists (used only for group-lasso)
+        the outer list represents the groups and the
+        inner lists represent the variables in the groups. E.g. [[1, 2],
+        [2, 3]] contains two groups ([1, 2] and [2, 3]) with variable 1 and
+        2 in the first group and variables 2 and 3 in the second group.
 
     Returns
     -------
@@ -65,7 +69,7 @@ def get_prox(penalty='trace', groups=None):
 
 
 def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
-         tol=1e-5, max_iter=10000, return_iter=False):
+         groups=None, tol=1e-5, max_iter=10000, return_iter=False):
     """Iterative-Shrinking Thresholding Algorithm.
 
     Compute the solution of the minimization problem
@@ -94,6 +98,11 @@ def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
     penalty : string
         the selected penalty function in {'l21', 'trace', 'group-lasso'};
         default is 'trace'.
+    groups : list of lists (used only for group-lasso)
+        the outer list represents the groups and the
+        inner lists represent the variables in the groups. E.g. [[1, 2],
+        [2, 3]] contains two groups ([1, 2] and [2, 3]) with variable 1 and
+        2 in the first group and variables 2 and 3 in the second group.
     tol : float
         stopping rule tolerance. Default is 1e-5.
     max_iter : int
@@ -110,7 +119,7 @@ def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
     k : int
         the number of iterations (if return_iter True)
     """
-    # Load the loss function
+    # Select the loss function
     if loss.lower() == 'square':
         grad = square_loss_grad
     elif loss.lower() in ('logit', 'logistic'):
@@ -119,16 +128,8 @@ def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
         raise NotImplementedError('loss must be '
                                   'in {}.'.format(__losses__))
 
-    # Load the penalty
-    if penalty.lower() == 'trace':
-        prox = trace_norm_prox
-    elif penalty.lower() == 'l21':
-        prox = l21_norm_prox
-    elif penalty.lower() in ('group-lasso', 'gl'):
-        prox = block_soft_thresholding
-    else:
-        raise NotImplementedError('penalty must be '
-                                  'in {}.'.format(__penalties__))
+    # Select the prox of the penalty
+    prox = get_prox(penalty, groups)
 
     # Get problem size
     n, d = data.shape
@@ -152,7 +153,8 @@ def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
         W_next = prox(Wk - gamma * grad(data, labels, Wk), alpha=tau*gamma)
 
         # Compute the value of the objective function
-        obj_next = tools.objective_function(data, labels, W_next, loss, penalty)
+        obj_next = tools.objective_function(data, labels, W_next,
+                                            loss, tau, penalty, groups)
 
         # Check stopping criterion
         if np.abs((objk - obj_next) / objk) <= tol:
@@ -169,7 +171,7 @@ def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
 
 
 def FISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
-          tol=1e-5, max_iter=10000, return_iter=False):
+          groups=None, tol=1e-5, max_iter=10000, return_iter=False):
     """Fast Iterative-Shrinking Thresholding Algorithm.
 
     Compute the solution of the minimization problem
@@ -198,6 +200,11 @@ def FISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
     penalty : string
         the selected penalty function in {'l21', 'trace', 'group-lasso'};
         default is 'trace'.
+    groups : list of lists (used only for group-lasso)
+        the outer list represents the groups and the
+        inner lists represent the variables in the groups. E.g. [[1, 2],
+        [2, 3]] contains two groups ([1, 2] and [2, 3]) with variable 1 and
+        2 in the first group and variables 2 and 3 in the second group.
     tol : float
         stopping rule tolerance. Default is 1e-5.
     max_iter : int
@@ -214,7 +221,7 @@ def FISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
     k : int
         the number of iterations (if return_iter True)
     """
-    # Load the loss function
+    # Select the loss function
     if loss.lower() == 'square':
         grad = square_loss_grad
     elif loss.lower() in ('logit', 'logistic'):
@@ -223,16 +230,8 @@ def FISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
         raise NotImplementedError('loss must be '
                                   'in {}.'.format(__losses__))
 
-    # Load the penalty
-    if penalty.lower() == 'trace':
-        prox = trace_norm_prox
-    elif penalty.lower() == 'l21':
-        prox = l21_norm_prox
-    elif penalty.lower() in ('group-lasso', 'gl'):
-        prox = block_soft_thresholding
-    else:
-        raise NotImplementedError('penalty must be '
-                                  'in {}.'.format(__penalties__))
+    # Select the prox of the penalty
+    prox = get_prox(penalty, groups)
 
     n, d = data.shape
     _, T = labels.shape
@@ -260,7 +259,8 @@ def FISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
         Wk = prox(Zk - gamma * grad(data, labels, Zk), alpha=tau*gamma)
 
         # Compute the value of the objective function
-        obj_next = tools.objective_function(data, labels, Wk, loss, penalty)
+        obj_next = tools.objective_function(data, labels, Wk,
+                                            loss, tau, penalty, groups)
 
         # Check stopping criterion
         # if np.abs((objk - obj_next) / objk) <= tol:

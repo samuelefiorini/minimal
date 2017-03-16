@@ -10,8 +10,8 @@
 
 import numpy as np
 
-from six.moves import map
 from minimal.loss_functions import __losses__
+from six.moves import map
 
 __penalties__ = ('trace', 'l21', 'group-lasso', 'gl')
 
@@ -88,6 +88,21 @@ def group_lasso_norm_bound(X, Y, loss='square'):
     raise NotImplementedError('TODO')
 
 
+def trace(X):
+    """Compute the trace-norm on the input matrix."""
+    return np.linalg.norm(X, ord='nuc')
+
+
+def l21(X):
+    """Compute the L21 norm on the input matrix."""
+    return sum(map(lambda x: np.linalg.norm(x, ord=2), X))
+
+
+def group_lasso(x, groups):
+    """Compute the group-lasso penalty on the input array with the given groups."""
+    return np.linalg.norm([x[g].T.dot(x[g]) for g in groups])
+
+
 def soft_thresholding(w, alpha):
     """Compute the element-wise soft-thresholding operator on the vector w.
 
@@ -104,6 +119,16 @@ def soft_thresholding(w, alpha):
         soft-thresholded vector
     """
     return np.sign(w) * np.clip(np.abs(w) - alpha, 0.0, np.inf)
+
+
+def euclidean_norm_prox(x, alpha):
+    """Compute the proximal mapping for the Euclidean norm."""
+    return np.max((1 - alpha/np.linalg.norm(x, ord=2), 0)) * x
+
+
+def block_soft_thresholding(x, alpha, groups):
+    """Compute the proximal mapping for the group-lasso penalty."""
+    return np.vstack([euclidean_norm_prox(x[g], alpha) for g in groups])
 
 
 def trace_norm_prox(W, alpha):
@@ -167,21 +192,3 @@ def l21_norm_prox(W, alpha):
 
     # Return the Hadamard-product between Wst and W
     return W * Wst
-
-
-def block_soft_thresholding(w, alpha):
-    """Compute the block-wise soft-thresholding operator on the vector w.
-
-    Parameters
-    ----------
-    w : (d,) or (d, 1) ndarray
-    input vector
-    alpha : float
-    threshold
-
-    Returns
-    ----------
-    wt : (d,) or (d, 1) ndarray
-    soft-thresholded vector
-    """
-    return np.sign(w) * np.clip(np.abs(w) - alpha, 0.0, np.inf)

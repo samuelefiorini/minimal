@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Minimal core functionalities.
 
 This module contains the functions to perform core functionalities, such as

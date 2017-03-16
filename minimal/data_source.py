@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """Forked from ADENINE and SDG4ML.
 
 Lite version of adenine.utils.data_source() function that inherits the
