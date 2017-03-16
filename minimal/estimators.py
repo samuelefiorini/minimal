@@ -91,11 +91,11 @@ class GroupLasso(LinearModel, RegressorMixin):
         # We expect X and y to be float64 or float32 Fortran ordered arrays
         # when bypassing checks
         if check_input:
-            X, y = check_X_y(X, y, accept_sparse='csc',
-                             order='F', dtype=[np.float64, np.float32],
+            X, y = check_X_y(X, y, accept_sparse=False,
+                             order='C', dtype=[np.float64, np.float32],
                              copy=self.copy_X and self.fit_intercept,
-                             multi_output=True, y_numeric=True)
-            y = check_array(y, order='F', copy=False, dtype=X.dtype.type,
+                             multi_output=False, y_numeric=True)
+            y = check_array(y, order='C', copy=False, dtype=X.dtype.type,
                             ensure_2d=False)
 
         X, y, X_offset, y_offset, X_scale, precompute, Xy = \
@@ -108,7 +108,7 @@ class GroupLasso(LinearModel, RegressorMixin):
             Xy = Xy[:, np.newaxis]
 
         n_samples, n_features = X.shape
-        n_targets = y.shape[1]
+        # n_targets = y.shape[1]
 
         # Define group-lasso minimizer
         args = {'loss': 'square',
@@ -134,5 +134,12 @@ class GroupLasso(LinearModel, RegressorMixin):
             self.coef_, _, self.n_iter = minimizer(data=X, labels=y)
         else:
             self.coef_, _ = minimizer(data=X, labels=y)
+        self.coef_ = self.coef_.ravel()
+
+        # Set intercept
+        self._set_intercept(X_offset, y_offset, X_scale)
+
+        # workaround since _set_intercept will cast self.coef_ into X.dtype
+        self.coef_ = np.asarray(self.coef_, dtype=X.dtype)
 
         return self

@@ -100,7 +100,7 @@ def l21(X):
 
 def group_lasso(x, groups):
     """Compute the group-lasso penalty on the input array with the given groups."""
-    return np.linalg.norm([x[g].dot(x[g]) for g in groups])
+    return np.linalg.norm([x[g].T.dot(x[g]) for g in groups])
 
 
 def soft_thresholding(w, alpha):
@@ -126,9 +126,9 @@ def euclidean_norm_prox(x, alpha):
     return np.max((1 - alpha/np.linalg.norm(x, ord=2), 0)) * x
 
 
-def block_soft_thresholding(x, alpha, groups=None):
+def block_soft_thresholding(x, alpha, groups):
     """Compute the proximal mapping for the group-lasso penalty."""
-    return np.hstack([euclidean_norm_prox(x[g], alpha) for g in groups])
+    return np.vstack([euclidean_norm_prox(x[g], alpha) for g in groups])
 
 
 def trace_norm_prox(W, alpha):
@@ -192,21 +192,3 @@ def l21_norm_prox(W, alpha):
 
     # Return the Hadamard-product between Wst and W
     return W * Wst
-
-
-def block_soft_thresholding(w, alpha):
-    """Compute the block-wise soft-thresholding operator on the vector w.
-
-    Parameters
-    ----------
-    w : (d,) or (d, 1) ndarray
-    input vector
-    alpha : float
-    threshold
-
-    Returns
-    ----------
-    wt : (d,) or (d, 1) ndarray
-    soft-thresholded vector
-    """
-    return np.sign(w) * np.clip(np.abs(w) - alpha, 0.0, np.inf)

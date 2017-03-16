@@ -9,10 +9,15 @@
 import numpy as np
 
 __losses__ = ('square', 'logit', 'logistic')
+__all__ = ('__losses__', 'square_loss', 'square_loss_grad', 'logit_loss',
+           'logit_loss_grad')
 
 
 def square_loss(X, Y, W):
     """Compute the value of the square loss on W.
+
+    When Y is a row/column vector the return ||XW - Y||^2_2, for multi-output
+    return ||XW - Y||^2_F.
 
     Parameters
     ----------
@@ -28,7 +33,13 @@ def square_loss(X, Y, W):
     obj : float
         The value of the objective function on W.
     """
-    return 1.0 / X.shape[0] * np.linalg.norm(np.dot(X, W) - Y, ord='fro') ** 2
+    Yshape = Y.shape
+    if len(Yshape) == 1 or (len(Yshape) == 2 and Y.shape[1] == 1):
+        order = 2
+    else:
+        order = 'fro'
+    norm = np.linalg.norm(np.dot(X, W) - Y, ord=order)
+    return (1.0 / X.shape[0]) * (norm * norm)
 
 
 def square_loss_grad(X, Y, W):
