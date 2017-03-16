@@ -33,6 +33,7 @@ from minimal.penalties import (trace_norm_prox, l21_norm_prox,
 from minimal.penalties import __penalties__
 
 __all__ = ('ISTA', 'FISTA', 'get_prox')
+__algorithms__ = ('ISTA', 'FISTA')
 
 
 def get_prox(penalty='trace', groups=None):
@@ -118,7 +119,7 @@ def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
     k : int
         the number of iterations (if return_iter True)
     """
-    # Load the loss function
+    # Select the loss function
     if loss.lower() == 'square':
         grad = square_loss_grad
     elif loss.lower() in ('logit', 'logistic'):
@@ -127,7 +128,7 @@ def ISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
         raise NotImplementedError('loss must be '
                                   'in {}.'.format(__losses__))
 
-    # Load the penalty
+    # Select the prox of the penalty
     prox = get_prox(penalty, groups)
 
     # Get problem size
@@ -220,7 +221,7 @@ def FISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
     k : int
         the number of iterations (if return_iter True)
     """
-    # Load the loss function
+    # Select the loss function
     if loss.lower() == 'square':
         grad = square_loss_grad
     elif loss.lower() in ('logit', 'logistic'):
@@ -229,7 +230,7 @@ def FISTA(data, labels, tau, Wstart=None, loss='square', penalty='trace',
         raise NotImplementedError('loss must be '
                                   'in {}.'.format(__losses__))
 
-    # Load the proximal mapping
+    # Select the prox of the penalty
     prox = get_prox(penalty, groups)
 
     n, d = data.shape
