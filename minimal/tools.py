@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Utils module for minimal.
 
 This module contains the utility functions for the actual algorithms.

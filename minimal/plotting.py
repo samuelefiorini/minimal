@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Minimal plotting utilities.
 
 This module contains the functions to generate intuitive plots for results
