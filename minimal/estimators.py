@@ -55,8 +55,8 @@ class GroupLasso(LinearModel, RegressorMixin):
         hyperparameters learnt more robust and almost independent of the number
         of samples. The same property is not valid for standardized data.
         However, if you wish to standardize, please use
-        :class:`preprocessing.StandardScaler` before calling ``fit`` on an estimator
-        with ``normalize=False``.
+        :class:`sklearn.preprocessing.StandardScaler` before calling
+        ``fit`` on an estimator with ``normalize=False``.
     return_iter : bool
         return the number of iterations before convergence
     """
