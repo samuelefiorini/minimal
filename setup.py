@@ -37,8 +37,8 @@ setup(
     packages=['minimal'],
     requires=['numpy (>=1.10.1)',
               'scipy (>=0.16.1)',
-              'sklearn (>=0.17)',
-              'matplotlib (>=1.5.1)',
+              'scikit-learn (>=0.18.1)',
+              'matplotlib (>=2.0.1)',
               'seaborn (>=0.7.0)'],
     scripts=['scripts/mini_train.py', 'scripts/mini_test.py'],
 )
