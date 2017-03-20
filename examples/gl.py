@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-from minimal.estimators import GroupLasso
+from minimal.estimators import GroupLasso, GroupLassoClassifier
 from sklearn import metrics
 
 def main():
@@ -29,6 +29,7 @@ def main():
     X = np.hstack([
         np.random.multivariate_normal(mean=np.ones(d_group)*(4*np.random.rand(1)-2),
                                       cov=THETA, size=(n)) for i in range(n_group)])/np.sqrt(n)
+    X = X - np.mean(X, axis=0)
 
 
     # Define beta_star a 0-1 vector with group structure:
@@ -39,19 +40,19 @@ def main():
 
     # Define y as X*beta + noise
     noise = np.random.randn(n)
-    # y = np.sign(X.dot(beta_star) + noise)
-    y = X.dot(beta_star) + noise
+    y = np.sign(X.dot(beta_star) + noise)
+    # y = X.dot(beta_star) + noise
 
     print(X.shape)
     print(beta_star.shape)
     print(y.shape)
-    print('----------------------')
     # Evaluate the chance probability
-    # chance = 0.5 +  abs(y.sum())/(2.0*n)
-    # print("Chance: {:2.3f}".format(chance))
+    chance = 0.5 + abs(y.sum())/(2.0*n)
+    print("Chance: {:2.3f}".format(chance))
+    print('----------------------')
 
     # Best model error
-    print("Best model error: {:2.3f}".format(np.mean(abs(y - X.dot(beta_star)))))
+    # print("Best model error: {:2.3f}".format(np.mean(abs(y - X.dot(beta_star)))))
 
     # Define the groups variable as in
     # parsimony.functions.nesterov.gl.linear_operator_from_groups
@@ -60,12 +61,16 @@ def main():
     print(beta_star)
 
     # mdl = GroupLasso(alpha=0.1, groups=groups)  # square
-    mdl = GroupLasso(alpha=0.01, groups=groups)
+    # mdl = GroupLasso(alpha=0.01, groups=groups)
+    # mdl = GroupLassoClassifier(alpha=0.04, groups=groups, loss='square')
+    mdl = GroupLassoClassifier(alpha=0.01, groups=groups, loss='logit')
     mdl.fit(X, y)
     print(mdl.coef_)
 
-    print("Estimated prediction error = {:2.3f}".format(
-        metrics.mean_absolute_error(mdl.predict(X), y)))
+    print("Estimated prediction accuracy = {:2.3f}".format(
+        metrics.accuracy_score(mdl.predict(X), y)))
+    # print("Estimated prediction error = {:2.3f}".format(
+    #     metrics.mean_absolute_error(mdl.predict(X), y)))
 
 if __name__ == '__main__':
     main()
