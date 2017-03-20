@@ -63,6 +63,9 @@ def get_lipschitz(data, loss):
     if loss == 'square':
         # compute the largest singular value
         return np.linalg.norm(squared(data), ord=2)
+    elif loss in ['logit', 'logistic']:
+        # compute the largest singular value
+        return np.linalg.norm(squared(data), ord=2)  # TODO check this result
     else:
         raise NotImplementedError('loss must be in {} '.format(__losses__))
 

@@ -59,7 +59,8 @@ def main():
     # print(groups)
     print(beta_star)
 
-    mdl = GroupLasso(alpha=0.1, groups=groups)
+    # mdl = GroupLasso(alpha=0.1, groups=groups)  # square
+    mdl = GroupLasso(alpha=0.01, groups=groups)
     mdl.fit(X, y)
     print(mdl.coef_)
 

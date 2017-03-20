@@ -65,13 +65,16 @@ def square_loss_grad(X, Y, W):
 def logit_loss(X, Y, W):
     """Compute the value of the logit loss on W.
 
+    Use this function only for binary classification.
+    This is the negative loglikelihood.
+
     Parameters
     ----------
     X : (n, d) float ndarray
         data matrix
-    Y : (n, T) float ndarray
+    Y : (n,) or (n,1) float ndarray
         labels matrix
-    W : (d, T) float ndarray
+    W : (d,) or (d,1) float ndarray
         weights
 
     Returns
@@ -79,7 +82,14 @@ def logit_loss(X, Y, W):
     obj : float
         loss function on W
     """
-    raise NotImplementedError('TODO')
+    Yshape = Y.shape
+    if len(Yshape) == 1 or (len(Yshape) == 2 and Y.shape[1] > 1):
+        raise NotImplementedError('multi-category classification not '
+                                  'implemented yet')
+    else:
+        Xw = X.dot(W)
+        return -(1.0 / X.shape[0]) * np.sum(Y * Xw - np.log10(1 + np.exp(-Xw)))
+        # return -(1.0 / X.shape[0]) * np.sum(np.log10(1 + np.exp(-Y*X.dot(W))))
 
 
 def logit_loss_grad(X, Y, W):
@@ -89,9 +99,9 @@ def logit_loss_grad(X, Y, W):
     ----------
     X : (n, d) float ndarray
         data matrix
-    Y : (n, T) float ndarray
+    Y : (n,) or (n,1) float ndarray
         labels matrix
-    W : (d, T) float ndarray
+    W : (d,) or (d,1) float ndarray
         weights
 
     Returns
@@ -99,4 +109,10 @@ def logit_loss_grad(X, Y, W):
     G : (d, T) float ndarray
         logit loss gradient evaluated on W
     """
-    raise NotImplementedError('TODO')
+    Yshape = Y.shape
+    if len(Yshape) == 1 or (len(Yshape) == 2 and Y.shape[1] > 1):
+        raise NotImplementedError('multi-category classification not '
+                                  'implemented yet')
+    else:
+        p = np.exp(-Y * X.dot(W))
+        return -(1.0 / X.shape[0]) * X.T.dot(Y*p/(1+p))
