@@ -62,8 +62,8 @@ def main():
 
     # mdl = GroupLasso(alpha=0.1, groups=groups)  # square
     # mdl = GroupLasso(alpha=0.01, groups=groups)
-    # mdl = GroupLassoClassifier(alpha=0.04, groups=groups, loss='square')
-    mdl = GroupLassoClassifier(alpha=0.01, groups=groups, loss='logit')
+    mdl = GroupLassoClassifier(alpha=0.04, groups=groups, loss='square')
+    # mdl = GroupLassoClassifier(alpha=0.01, groups=groups, loss='logit')
     mdl.fit(X, y)
     print(mdl.coef_)
 
