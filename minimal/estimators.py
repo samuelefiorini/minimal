@@ -425,7 +425,6 @@ class NNMRegressor(LinearModel, RegressorMixin):
             self.coef_, _, self.n_iter = minimizer(data=X, labels=y)
         else:
             self.coef_, _ = minimizer(data=X, labels=y)
-        self.coef_ = self.coef_.ravel()
 
         # Set intercept
         # self._set_intercept(X_offset, y_offset, X_scale)
