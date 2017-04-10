@@ -13,7 +13,7 @@ from functools import partial
 from minimal.optimization import __algorithms__
 from sklearn.base import RegressorMixin
 from sklearn.linear_model.base import LinearModel, LinearClassifierMixin
-from sklearn.linear_model.base import _pre_fit
+from sklearn.linear_model.base import _pre_fit, _preprocess_data
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils import (check_array, check_X_y,
                            compute_sample_weight, column_or_1d)
@@ -353,13 +353,13 @@ class NNMRegressor(LinearModel, RegressorMixin):
     return_iter : bool
         return the number of iterations before convergence
     """
-    def __init__(self, alpha=1.0, algorithm='FISTA', #fit_intercept=True,
+    def __init__(self, alpha=1.0, algorithm='FISTA', fit_intercept=True,
                  tol=1e-5, max_iter=10000, copy_X=True, normalize=False,
                  return_iter=False):
         self.alpha = alpha
         self.loss = 'square'
         self.algorithm = algorithm
-        # self.fit_intercept = fit_intercept
+        self.fit_intercept = fit_intercept
         self.tol = tol
         self.max_iter = max_iter
         self.return_iter = return_iter
@@ -399,6 +399,9 @@ class NNMRegressor(LinearModel, RegressorMixin):
             raise ValueError("X and y have inconsistent dimensions (%d != %d)"
                              % (n_samples, y.shape[0]))
 
+        X, y, X_offset, y_offset, X_scale = _preprocess_data(
+            X, y, self.fit_intercept, self.normalize, copy=False)
+
         # Define group-lasso minimizer
         args = {'loss': self.loss,
                 'penalty': 'trace',
@@ -425,7 +428,7 @@ class NNMRegressor(LinearModel, RegressorMixin):
         self.coef_ = self.coef_.ravel()
 
         # Set intercept
-        # self._set_intercept(X_offset, y_offset, X_scale)
+        self._set_intercept(X_offset, y_offset, X_scale)
 
         # workaround since _set_intercept will cast self.coef_ into X.dtype
         self.coef_ = np.asarray(self.coef_, dtype=X.dtype)
