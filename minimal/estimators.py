@@ -353,13 +353,13 @@ class NNMRegressor(LinearModel, RegressorMixin):
     return_iter : bool
         return the number of iterations before convergence
     """
-    def __init__(self, alpha=1.0, algorithm='FISTA', fit_intercept=True,
+    def __init__(self, alpha=1.0, algorithm='FISTA', #fit_intercept=True,
                  tol=1e-5, max_iter=10000, copy_X=True, normalize=False,
                  return_iter=False):
         self.alpha = alpha
         self.loss = 'square'
         self.algorithm = algorithm
-        self.fit_intercept = fit_intercept
+        # self.fit_intercept = fit_intercept
         self.tol = tol
         self.max_iter = max_iter
         self.return_iter = return_iter
@@ -425,7 +425,7 @@ class NNMRegressor(LinearModel, RegressorMixin):
         self.coef_ = self.coef_.ravel()
 
         # Set intercept
-        self._set_intercept(X_offset, y_offset, X_scale)
+        # self._set_intercept(X_offset, y_offset, X_scale)
 
         # workaround since _set_intercept will cast self.coef_ into X.dtype
         self.coef_ = np.asarray(self.coef_, dtype=X.dtype)
