@@ -384,27 +384,20 @@ class NNMRegressor(LinearModel, RegressorMixin):
                           "well. You are advised to use the LinearRegression "
                           "estimator from scikit-learn", stacklevel=2)
 
-        # We expect X and y to be float64 or float32 Fortran ordered arrays
-        # when bypassing checks
-        if check_input:
-            X, y = check_X_y(X, y, accept_sparse=False,
-                             order='C', dtype=[np.float64, np.float32],
-                             copy=self.copy_X and self.fit_intercept,
-                             multi_output=False, y_numeric=True)
-            y = check_array(y, order='C', copy=False, dtype=X.dtype.type,
-                            ensure_2d=False)
-
-        X, y, X_offset, y_offset, X_scale, precompute, Xy = \
-            _pre_fit(X, y, None, False, self.normalize,
-                     self.fit_intercept, copy=False)
+        # X and y must be of type float64
+        X = check_array(X, dtype=np.float64, order='F',
+                        copy=self.copy_X and self.fit_intercept)
+        y = check_array(y, dtype=np.float64, ensure_2d=False)
 
         if y.ndim == 1:
-            y = y[:, np.newaxis]
-        if Xy is not None and Xy.ndim == 1:
-            Xy = Xy[:, np.newaxis]
+            raise ValueError("For mono-task outputs, use Lasso or Elastic-Net")
 
         n_samples, n_features = X.shape
-        # n_targets = y.shape[1]
+        _, n_tasks = y.shape
+
+        if n_samples != y.shape[0]:
+            raise ValueError("X and y have inconsistent dimensions (%d != %d)"
+                             % (n_samples, y.shape[0]))
 
         # Define group-lasso minimizer
         args = {'loss': self.loss,
