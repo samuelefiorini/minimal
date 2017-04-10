@@ -428,7 +428,7 @@ class NNMRegressor(LinearModel, RegressorMixin):
         self.coef_ = self.coef_.ravel()
 
         # Set intercept
-        self._set_intercept(X_offset, y_offset, X_scale)
+        # self._set_intercept(X_offset, y_offset, X_scale)
 
         # workaround since _set_intercept will cast self.coef_ into X.dtype
         self.coef_ = np.asarray(self.coef_, dtype=X.dtype)
