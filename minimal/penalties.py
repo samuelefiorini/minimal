@@ -100,7 +100,8 @@ def l21(X):
 
 def group_lasso(x, groups):
     """Compute the group-lasso penalty on the input array with the given groups."""
-    return np.linalg.norm([x[g].T.dot(x[g]) for g in groups])
+    #return np.linalg.norm([x[g].T.dot(x[g]) for g in groups])
+    return np.sum([np.linalg.norm(x[g]) for g in groups])
 
 
 def soft_thresholding(w, alpha):
